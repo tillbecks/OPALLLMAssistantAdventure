@@ -46,14 +46,13 @@ The script functionCallingCode.py requires two variables to be configured:
     secret_value: Set this to your API key.
     PATH_OPAL: Set this to the path of your OPAL directory.
 
-Example Configuration
 
 Open functionCallingCode.py in a text editor, and update the variables as follows:
 
-# Replace 'your_api_key_here' with your actual API key
+### Replace 'your_api_key_here' with your actual API key
 secret_value = 'your_api_key_here'
 
-# Replace 'your_opal_directory_path' with the absolute path to your OPAL directory
+### Replace 'your_opal_directory_path' with the absolute path to your OPAL directory
 PATH_OPAL = 'your_opal_directory_path'
 
 Tips for Setting the Path
