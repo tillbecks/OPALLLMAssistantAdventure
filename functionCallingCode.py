@@ -1,13 +1,14 @@
 from groq import Groq
 import subprocess
 import json
+import os
 
 #Prompts examples:
 #user_prompt1 = "Hello, how are you?"
 #user_prompt2 = "Please do a constant string analysis on the file '/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/StringConstantsDemo.class'"
 
 
-secret_value = #Insert your secret key from groq
+secret_value = "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"
 client = Groq(api_key=secret_value)
 Model = 'llama3-70b-8192'
 
@@ -17,7 +18,9 @@ def get_response(question):
     return json.dumps({"question": question})
 
 def string_constants_analysis(file_path):
-    sbt_command = "project Tools; runMain org.opalj.support.info.StringConstants -cp=" + file_path
+    normalized_path = os.path.normpath(file_path)
+    
+    sbt_command = "project Tools; runMain org.opalj.support.info.StringConstants -cp=" + normalized_path
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
