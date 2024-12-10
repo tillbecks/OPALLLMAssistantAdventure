@@ -6,6 +6,7 @@ import os
 #Prompts examples:
 #user_prompt1 = "Hello, how are you?"
 #user_prompt2 = "Please do a constant string analysis on the file '/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/StringConstantsDemo.class'"
+#user_prompt3 = "Please do a field assignability analysis on the file '/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/FieldAssignabilityDemo.class'"
 
 
 secret_value = #Insert your secret key from groq
@@ -29,6 +30,18 @@ def string_constants_analysis(file_path):
         return json.dumps({"reply": "FileNotFoundError"})
     
     return json.dumps({"reply": answer})
+
+def field_assignability_analysis(file_path):
+    normalized_path = os.path.normpath(file_path)
+    sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldAssignabilityAnalysisDemo -cp=" + normalized_path 
+    try:
+        answer = run_sbt_command(sbt_command)
+    except subprocess.CalledProcessError as e:
+        return json.dumps({"reply": "The following error occured: " + str(e)})
+    except FileNotFoundError:
+        return json.dumps({"reply": "FileNotFoundError"})
+    
+    return json.dumps({"reply": answer}) 
 
 def  run_sbt_command(command):
     return subprocess.run(["sbt", command], cwd=PATH_OPAL, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
@@ -69,6 +82,23 @@ tools = [
             },
         },
     },
+    {
+        "type": "function",
+        "function":{
+            "name": "field_assignability_analysis",
+            "description": "conduct a field assignability analysis on the java bytecode specified in the file path",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path":{
+                        "type":"string",
+                        "description":"path to the class-file containing the java bytecode to be analysed (e.g. '/usr/home/filename.class')"
+                    }
+                },
+                "required": ["file_path"],
+            },
+        },
+    },
 ]
 
 def run_conversation(user_prompt):
@@ -97,7 +127,8 @@ def run_conversation(user_prompt):
     if tool_calls:
         available_functions={
             "get_response": get_response,
-            "string_constants_analysis": string_constants_analysis
+            "string_constants_analysis": string_constants_analysis,
+            "field_assignability_analysis": field_assignability_analysis
         }
         messages.append(response_message)
 
