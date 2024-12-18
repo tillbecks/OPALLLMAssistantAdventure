@@ -2,6 +2,7 @@ from groq import Groq
 import subprocess
 import json
 import os
+from secret_keys import CROQ_SECRET_API_KEY
 
 #Prompts examples:
 #user_prompt1 = "Hello, how are you?"
@@ -9,8 +10,7 @@ import os
 #user_prompt3 = "Please do a field assignability analysis on the file '/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/FieldAssignabilityDemo.class'"
 
 
-secret_value = #Insert your secret key from groq
-client = Groq(api_key=secret_value)
+client = Groq(api_key=CROQ_SECRET_API_KEY)
 Model = 'llama3-70b-8192'
 
 PATH_OPAL = "/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/opal" #Change this to your opal directory
