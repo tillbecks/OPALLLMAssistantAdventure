@@ -1,0 +1,1 @@
+CROQ_SECRET_API_KEY = "Insert your secret croq key";
