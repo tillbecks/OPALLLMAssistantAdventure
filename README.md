@@ -27,10 +27,10 @@ Once activated, your terminal prompt should display the name of the virtual envi
 
 ## 2. Install Required Python Packages
 
-With the virtual environment activated, install the groq and subprocess packages:
+With the virtual environment activated, install the groq package:
 
 ```bash
-pip install groq subprocess
+pip install groq
 ```
 
 Note: If pip is not up to date, you can update it by running:
@@ -39,28 +39,30 @@ Note: If pip is not up to date, you can update it by running:
 python -m pip install --upgrade pip
 ```
 
-## 3. Configure functionCallingCode.py
+## 3. Configure functionCallingCode.py and secret_keys.py
 
-The script functionCallingCode.py requires two variables to be configured:
+### functionCallingCode.py
+    The script functionCallingCode.py requires two variables to be configured:
 
-    secret_value: Set this to your API key.
-    PATH_OPAL: Set this to the path of your OPAL directory.
+        PATH_OPAL: Set this to the path of your OPAL directory.
 
 
-Open functionCallingCode.py in a text editor, and update the variables as follows:
+    Open functionCallingCode.py in a text editor, and update the variables as follows:
 
-### Replace 'your_api_key_here' with your actual API key
-secret_value = 'your_api_key_here'
+#### Replace 'your_opal_directory_path' with the absolute path to your OPAL directory
+    PATH_OPAL = 'your_opal_directory_path'
 
-### Replace 'your_opal_directory_path' with the absolute path to your OPAL directory
-PATH_OPAL = 'your_opal_directory_path'
+    Tips for Setting the Path
 
-Tips for Setting the Path
+    - On Windows, ensure the path uses double backslashes `\\` or forward slashes `/`, e.g., `C:\\Users\\YourUser\\OPAL` or `C:/Users/YourUser/OPAL`.
+    - On macOS/Linux, you can use the standard forward slash `/`, e.g., `/home/youruser/opal`.
 
-- On Windows, ensure the path uses double backslashes `\\` or forward slashes `/`, e.g., `C:\\Users\\YourUser\\OPAL` or `C:/Users/YourUser/OPAL`.
-- On macOS/Linux, you can use the standard forward slash `/`, e.g., `/home/youruser/opal`.
+### secret_keys.py
+    The repository contains a file secret_keys_template.py. You have to copy this file and call it secret_keys.py and insert your own secret keys:
 
-4. Run the Script
+        CROQ_SECRET_API_KEY: Set this to your croq api key.
+
+## 4. Run the Script
 
 After completing the setup:
 ```bash
