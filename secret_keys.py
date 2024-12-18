@@ -1,1 +1,0 @@
-CROQ_SECRET_API_KEY = "test";
