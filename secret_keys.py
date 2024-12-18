@@ -1,1 +1,1 @@
-CROQ_SECRET_API_KEY = "insert your secret key here";
+CROQ_SECRET_API_KEY = "test";
