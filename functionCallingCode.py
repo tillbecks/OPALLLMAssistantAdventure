@@ -145,6 +145,18 @@ def print_tac(file_path, method):
     except FileNotFoundError:
         return json.dumps({"reply": "FileNotFoundError"})
     return json.dumps({"reply": answer})
+    
+def field_immutability_analysis(file_path):
+    normalized_path = os.path.normpath(file_path)
+    sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldImmutabilityAnalysisDemo -cp=" + normalized_path 
+    try:
+        answer = run_sbt_command(sbt_command)
+    except subprocess.CalledProcessError as e:
+        return json.dumps({"reply": "The following error occured: " + str(e)})
+    except FileNotFoundError:
+        return json.dumps({"reply": "FileNotFoundError"})
+    
+    return json.dumps({"reply": answer})  
 
 def  run_sbt_command(command):
     return subprocess.run(["sbt", command], cwd=PATH_OPAL, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
@@ -198,6 +210,23 @@ tools = [
         "function":{
             "name": "field_assignability_analysis",
             "description": "Conducts a field assignability analysis on the java bytecode specified in the file path.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path":{
+                        "type":"string",
+                        "description":"path to the class-file containing the java bytecode to be analysed (e.g. '/usr/home/filename.class')"
+                    }
+                },
+                "required": ["file_path"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function":{
+            "name": "field_immutability_analysis",
+            "description": "conduct a field immutability analysis on the java bytecode specified in the file path",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -356,6 +385,7 @@ def run_conversation(user_prompt):
             "field_array_usage_analysis": field_array_usage_analysis,
             "local_points_to": local_points_to,
             "print_tac": print_tac,
+            "field_immutability_analysis": field_immutability_analysis,
         }
         messages.append(response_message)
 
