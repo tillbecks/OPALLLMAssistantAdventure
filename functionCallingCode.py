@@ -3,6 +3,7 @@ import subprocess
 import json
 import os
 from secret_keys import CROQ_SECRET_API_KEY
+from memory import Memory
 
 #Prompts examples:
 #user_prompt1 = "Hello, how are you?"
@@ -14,6 +15,8 @@ client = Groq(api_key=CROQ_SECRET_API_KEY)
 Model = 'llama3-70b-8192'
 
 PATH_OPAL = "/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/opal" #Change this to your opal directory
+
+mem = Memory()
 
 
 def get_response(question):
@@ -355,7 +358,9 @@ def run_conversation(user_prompt):
             "Opal combines different tools to analyse java bytecode." +
             "If the user is asking you something you can't answer, be honest and tell the user that you can't help with that." + 
             "You will get the console output of the tools you call, which can contain a lot of irrelevant information."  +
-            "You can ignore this information and just return the relevant information to the user."
+            "You can ignore this information and just return the relevant information to the user." +
+            "You have a memory from the last interactions with the user, please use this as a context. If you don't have a context, just ignore this information." +
+            mem.get_json_textual()
         },
         {
             "role": "user",
@@ -417,13 +422,16 @@ def run_conversation(user_prompt):
         messages.append(response_message)
         final_response = response.choices[0].message.content
     
+    mem.insert("llm_response", final_response)
     return final_response
 
 ui = "";
 print("Hello, please type your question or 'q' to quit.\n")
 
 while(ui != "q"):    
+    print("You: ")
     ui = str(input())
     if(ui != "q"):
-        print("\n"+run_conversation(ui)+"\n")
+        mem.insert("user_input", ui)
+        print("\n Assistant: "+run_conversation(ui)+"\n")
     
