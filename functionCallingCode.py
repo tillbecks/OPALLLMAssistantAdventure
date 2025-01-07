@@ -159,7 +159,19 @@ def field_immutability_analysis(file_path):
     except FileNotFoundError:
         return json.dumps({"reply": "FileNotFoundError"})
     
-    return json.dumps({"reply": answer})  
+    return json.dumps({"reply": answer})
+
+def parameter_usage_analysis(file_path):
+    normalized_path = os.path.normpath(file_path)
+    sbt_command = "project Demos; runMain org.opalj.ai.domain.l0.ParameterUsageAnalysis -cp=" + normalized_path 
+    try:
+        answer = run_sbt_command(sbt_command)
+    except subprocess.CalledProcessError as e:
+        return json.dumps({"reply": "The following error occured: " + str(e)})
+    except FileNotFoundError:
+        return json.dumps({"reply": "FileNotFoundError"})
+    
+    return json.dumps({"reply": answer})
 
 def  run_sbt_command(command):
     return subprocess.run(["sbt", command], cwd=PATH_OPAL, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
@@ -347,7 +359,24 @@ tools = [
                 }
             }
         },
-    }
+    },
+    {
+        "type": "function",
+        "function":{
+            "name": "parameter_usage_analysis",
+            "description": "conduct a parameter usage analysis on the java bytecode specified in the file path",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path":{
+                        "type":"string",
+                        "description":"path to the class-file containing the java bytecode to be analysed (e.g. '/usr/home/filename.class')"
+                    }
+                },
+                "required": ["file_path"],
+            },
+        },
+    },
 ]
 
 def run_conversation(user_prompt):
@@ -391,6 +420,7 @@ def run_conversation(user_prompt):
             "local_points_to": local_points_to,
             "print_tac": print_tac,
             "field_immutability_analysis": field_immutability_analysis,
+            "parameter_usage_analysis":parameter_usage_analysis,
         }
         messages.append(response_message)
 
