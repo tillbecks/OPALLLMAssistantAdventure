@@ -4,22 +4,31 @@ import json
 import os
 from secret_keys import CROQ_SECRET_API_KEY
 from memory import Memory
+import os.path
 
 #Prompts examples:
 #user_prompt1 = "Hello, how are you?"
 #user_prompt2 = "Please do a constant string analysis on the file '/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/StringConstantsDemo.class'"
 #user_prompt3 = "Please do a field assignability analysis on the file '/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/FieldAssignabilityDemo.class'"
 
+#SBT_PATH = r"C:\Program Files (x86)\sbt\bin\sbt.bat"  # Comment this out
 
 client = Groq(api_key=CROQ_SECRET_API_KEY)
 Model = 'llama3-70b-8192'
 
-PATH_OPAL = "/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/opal" #Change this to your opal directory
+PATH_OPAL = "C:\\Users\\anach\\Documents\\Masters\\SDT\\opal" #Change this to your opal directory
 
 #Initialisation of the memory component
 mem = Memory()
 
-#A Function to responde to a casual chat
+# At the start of your script, add this verification
+if not os.path.exists(PATH_OPAL):
+    raise Exception(f"OPAL directory not found at: {PATH_OPAL}")
+
+if not os.path.exists(os.path.join(PATH_OPAL, "build.sbt")):
+    raise Exception(f"No build.sbt found in OPAL directory: {PATH_OPAL}")
+
+#A Function to respond to a casual chat
 def get_response(question):
     return json.dumps({"question": question})
 
@@ -93,15 +102,31 @@ def bytecode_disassembler(file_path, safe_path, disassembled_file_name=""):
 
 #This function conducts a string constants analysis on the java bytecode specified in the file path.
 def string_constants_analysis(file_path):
-    normalized_path = os.path.normpath(file_path)
+    # print(f"\nDebug Info:")
+    # print(f"Original file path: {file_path}")
     
-    sbt_command = "project Tools; runMain org.opalj.support.info.StringConstants -cp=" + normalized_path
+    normalized_path = os.path.normpath(file_path).replace('\\', '\\\\')
+    #print(f"Normalized path: {normalized_path}")
+    
+    if not os.path.exists(normalized_path):
+        # print(f"File existence check failed")
+        # print(f"Current working directory: {os.getcwd()}")
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+    
+    # Format the command with proper quoting
+    sbt_command = f'project Tools; runMain org.opalj.support.info.StringConstants -cp={normalized_path}'
+    print(f"SBT Command: {sbt_command}")
+    
     try:
+        print("Attempting to run SBT command...")
         answer = run_sbt_command(sbt_command)
+        print("SBT command completed successfully")
     except subprocess.CalledProcessError as e:
-        return json.dumps({"reply": "The following error occured: " + str(e)})
-    except FileNotFoundError:
-        return json.dumps({"reply": "FileNotFoundError"})
+        print(f"CalledProcessError occurred: {e}")
+        return json.dumps({"reply": f"The following error occurred: {str(e)}"})
+    except FileNotFoundError as e:
+        print(f"FileNotFoundError occurred: {e}")
+        return json.dumps({"reply": f"FileNotFoundError: Could not find file at path: {normalized_path}"})
     
     return json.dumps({"reply": answer})
 
@@ -181,10 +206,35 @@ def parameter_usage_analysis(file_path):
     
     return json.dumps({"reply": answer})
 
+
 #Just a helper funtion to run sbt commands in the opal directory specified by the user. 
-def  run_sbt_command(command):
-    return subprocess.run(["sbt", command], cwd=PATH_OPAL, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
+def run_sbt_command(command):
+    print(f"Running SBT in directory: {PATH_OPAL}")
     
+    # Format the command as a single string
+    full_command = f'sbt "{command}"'
+    print(f"Full command: {full_command}")
+    
+    try:
+        result = subprocess.run(
+            full_command,
+            cwd=PATH_OPAL,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+        return result.stdout
+    except FileNotFoundError as e:
+        print(f"SBT not found in PATH. Error: {e}")
+        print(f"Current PATH: {os.environ.get('PATH', '')}")
+        raise e
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed with error: {e}")
+        print(f"Error output: {e.stderr}")
+        raise e
+
 #In the following, all available functions are defined. Based on the Information in this list, the LLM makes a decision which function to call.
 tools = [
     {
