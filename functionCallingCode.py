@@ -16,22 +16,21 @@ Model = 'llama3-70b-8192'
 
 PATH_OPAL = "/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/opal" #Change this to your opal directory
 
+#Initialisation of the memory component
 mem = Memory()
 
-
+#A Function to responde to a casual chat
 def get_response(question):
     return json.dumps({"question": question})
 
+#A Function that lists all available functions
 def list_functions():
     response = ""
     for tool in tools:
         response += tool["function"]["name"] + ": " + tool["function"]["description"] + "\n"
     return json.dumps({"reply": "You are able to use the following functions: " + response})
 
-def get_functions():
-    return json.dumps({"reply": json.dumps(tools)})
-
-
+#This creates a gv file of the class hierarchy of a jar file. Currently a safe_path to save the visualisation at can't be created.
 def hierarchy_visualisation(file_path, safe_path=""):
     normalized_path = os.path.normpath(file_path)
     normalized_safe_path = os.path.normpath(safe_path)
@@ -40,8 +39,8 @@ def hierarchy_visualisation(file_path, safe_path=""):
         sbt_command = "project Tools; runMain org.opalj.support.debug.ClassHierarchyVisualizer " + normalized_path
         answer = run_sbt_command(sbt_command)
         return_message = ""
-        #This function is disabled for now, because getting an file not found error, because the file the content is written first to is open in a file editor, when the sbt command is called, which somehow causes the error.
-        if safe_path!="":
+        #This functionality is disabled for now, because getting an file not found error, because the file the content is written first to is open in a file editor, when the sbt command is called, which somehow causes the error.
+        '''if safe_path!="":
             try:
                 find_answer = answer.find("Wrote class hierarchy graph to:")
                 if find_answer != -1:
@@ -57,12 +56,13 @@ def hierarchy_visualisation(file_path, safe_path=""):
                     return json.dumps({"reply": "The class hierarchy has been stored in the file " + normalized_safe_path + ". A copy of the file has been safed at: " + safe_path_new})
             except Exception as e:
                 print(e)
-                return_message += "The following error occured while trying to safe the generated file in the specified safe_path: " + str(e) + " But it was safed in the file specified by the following output:"
+                return_message += "The following error occured while trying to safe the generated file in the specified safe_path: " + str(e) + " But it was safed in the file specified by the following output:"'''
         return_message += answer
         return json.dumps({"reply": return_message})
     except subprocess.CalledProcessError as e:
         return json.dumps({"reply": "The following error occured: " + str(e)})
 
+#This function creates a html file, that visualizes the disassembled bytecode of a class file. The file is stored in the safe_path if specified, otherwise in the same directory as the class file.
 def bytecode_disassembler(file_path, safe_path, disassembled_file_name=""):
     normalized_path = os.path.normpath(file_path)
     normalized_safe_path = os.path.normpath(safe_path)
@@ -91,6 +91,7 @@ def bytecode_disassembler(file_path, safe_path, disassembled_file_name=""):
     except PermissionError:
         return json.dumps({"reply": "PermissionError while trying to write the disassembled file to the specified path."})
 
+#This function conducts a string constants analysis on the java bytecode specified in the file path.
 def string_constants_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
     
@@ -104,6 +105,7 @@ def string_constants_analysis(file_path):
     
     return json.dumps({"reply": answer})
 
+#This function conducts a field assignability analysis on the java bytecode specified in the file path.
 def field_assignability_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
     sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldAssignabilityAnalysisDemo -cp=" + normalized_path 
@@ -116,6 +118,7 @@ def field_assignability_analysis(file_path):
     
     return json.dumps({"reply": answer}) 
 
+#This function conducts a field array usage analysis on the java bytecode specified in the file path.
 def field_array_usage_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
     sbt_command = "project Demos; runMain org.opalj.tac.FieldAndArrayUsageAnalysis -cp=" + normalized_path
@@ -127,6 +130,7 @@ def field_array_usage_analysis(file_path):
         return json.dumps({"reply": "FileNotFoundError"})
     return json.dumps({"reply": answer})
 
+#This function collects points-to information related to a method in a specific class or jar file.
 def local_points_to(file_path, method):
     normalized_path = os.path.normpath(file_path)
     sbt_command = "project Demos; runMain org.opalj.tac.LocalPointsTo "+ normalized_path + " " + method
@@ -138,6 +142,8 @@ def local_points_to(file_path, method):
         return json.dumps({"reply": "FileNotFoundError"})
     return json.dumps({"reply": answer})
 
+#This function prints the complete three address code representation of a method in a specific class or jar file.
+#But the LLM tends to only show the three address code related to the specified function, even though the the opal function returns the tac of the whole class.
 def print_tac(file_path, method):
     normalized_path = os.path.normpath(file_path)
     sbt_command = "project Demos; runMain org.opalj.tac.PrintTAC "+ normalized_path + " " + method
@@ -149,6 +155,7 @@ def print_tac(file_path, method):
         return json.dumps({"reply": "FileNotFoundError"})
     return json.dumps({"reply": answer})
     
+#This function conducts a field immutability analysis on the java bytecode specified in the file path.
 def field_immutability_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
     sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldImmutabilityAnalysisDemo -cp=" + normalized_path 
@@ -161,6 +168,7 @@ def field_immutability_analysis(file_path):
     
     return json.dumps({"reply": answer})
 
+#This function conducts a parameter usage analysis on the java bytecode specified in the file path.
 def parameter_usage_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
     sbt_command = "project Demos; runMain org.opalj.ai.domain.l0.ParameterUsageAnalysis -cp=" + normalized_path 
@@ -173,10 +181,11 @@ def parameter_usage_analysis(file_path):
     
     return json.dumps({"reply": answer})
 
+#Just a helper funtion to run sbt commands in the opal directory specified by the user. 
 def  run_sbt_command(command):
     return subprocess.run(["sbt", command], cwd=PATH_OPAL, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
     
-
+#In the following, all available functions are defined. Based on the Information in this list, the LLM makes a decision which function to call.
 tools = [
     {
         "type": "function",
@@ -293,10 +302,6 @@ tools = [
                         "type": "string",
                         "description": "path to the jar containing the content to be visualized (e.g. '/usr/home/programm.jar')."
                     },
-                    #"safe_path": {
-                    #    "type": "string",
-                    #    "description": "optional path to the directory where the generated file should be stored (e.g. '/usr/home/')"
-                    #},
                 },
                 "required": ["file_path"],
             },
@@ -379,7 +384,13 @@ tools = [
     },
 ]
 
+#Main function to run the conversation, receiving the user input and returning the LLMs response.
 def run_conversation(user_prompt):
+    #This is the message the LLM receives everytime it is called.
+    #In the beginning its role is defined. It receives some information about its assisting role and the tools it can use.
+    #In the end it gets the content of the memory, which are the last n interactions between it and the user.
+    #Afterwards it receives the user input.
+    #This is the part where we can play around with prompt-engineering. To e.g. nudge the LLM into reasoning about whether to combine multiple functions?
     messages = [
         {
             "role": "system",
@@ -388,7 +399,7 @@ def run_conversation(user_prompt):
             "If the user is asking you something you can't answer, be honest and tell the user that you can't help with that." + 
             "You will get the console output of the tools you call, which can contain a lot of irrelevant information."  +
             "You can ignore this information and just return the relevant information to the user." +
-            "You have a memory from the last interactions with the user, please use this as a context. If you don't have a context, just ignore this information." +
+            "You have a memory from the last interactions with the user, please use this as a context. If there is no memory following this, just ignore this information." +
             mem.get_json_textual()
         },
         {
@@ -397,6 +408,7 @@ def run_conversation(user_prompt):
         }
     ]
 
+    #The LLM is then called twice, ones to decide whether to call a tool and the second time to create a user-response based on the tools output (or if no tool call was decided based on the user input solely).
     response = client.chat.completions.create(
         model = Model,
         messages=messages,
@@ -408,6 +420,7 @@ def run_conversation(user_prompt):
     response_message = response.choices[0].message
     tool_calls = response_message.tool_calls
 
+    #If a tool call was decided, the chosen functions are being called and the output is being appended to the message.
     if tool_calls:
         available_functions={
             "get_response": get_response,
@@ -424,6 +437,7 @@ def run_conversation(user_prompt):
         }
         messages.append(response_message)
 
+
         for tool_call in tool_calls:
             function_name = tool_call.function.name
             function_to_call = available_functions[function_name]
@@ -438,23 +452,27 @@ def run_conversation(user_prompt):
                 "content": function_response
             })
 
+        #The second and final response is being created, which is going to be displayed to the user as the LLMs answer.
         second_response = client.chat.completions.create(
                 model=Model,
                 messages=messages
         )
         final_response = second_response.choices[0].message.content
+    #If no tool call was decided, the LLMs response is being created based on the user input solely.
     else:
         response = client.chat.completions.create(
             model=Model,
             messages=messages,
             max_tokens=4096
         )
-        messages.append(response_message)
+        #messages.append(response_message) #I think this line is useless, as nothing is done with the message after this line and it is not stored permanently.
         final_response = response.choices[0].message.content
-    
+
+    mem.insert("user_input", user_prompt)
     mem.insert("llm_response", final_response)
     return final_response
 
+#The main loop running the conversation. The user can type in questions and a response is being generated by the LLM.
 ui = "";
 print("Hello, please type your question or 'q' to quit.\n")
 
@@ -462,6 +480,5 @@ while(ui != "q"):
     print("You: ")
     ui = str(input())
     if(ui != "q"):
-        mem.insert("user_input", ui)
-        print("\n Assistant: "+run_conversation(ui)+"\n")
+        print("\n Assistant: \n"+run_conversation(ui)+"\n")
     
