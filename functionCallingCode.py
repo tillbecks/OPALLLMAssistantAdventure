@@ -1,8 +1,9 @@
 from groq import Groq
 import json
-from secret_keys import CROQ_SECRET_API_KEY
+from secret_keys import CROQ_SECRET_API_KEY, PATH_OPAL
 from memory import Memory
 from functions import all_function_list
+import os
 
 #Prompts examples:
 #user_prompt1 = "Hello, how are you?"
