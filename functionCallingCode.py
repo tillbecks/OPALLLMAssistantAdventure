@@ -19,58 +19,19 @@ Model = 'llama-3.3-70b-versatile'
 #Initialisation of the memory component
 mem = Memory()
 
+if not os.path.exists(PATH_OPAL):
+    raise Exception(f"OPAL directory not found at: {PATH_OPAL}")
+
+if not os.path.exists(os.path.join(PATH_OPAL, "build.sbt")):
+    raise Exception(f"No build.sbt found in OPAL directory: {PATH_OPAL}")
+
 
 #In the following, all available functions are defined. Based on the Information in this list, the LLM makes a decision which function to call.
 tools = map(lambda obj: obj["definition"], all_function_list)
 
 
 
-def suggest_analysis(file_path):
-    """Suggests a specific OPAL analysis based on bytecode patterns."""
-    normalized_path = os.path.normpath(file_path)
 
-    if not os.path.exists(normalized_path):
-        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
-
-    try:
-        # Run `javap` to disassemble the bytecode
-        javap_output = subprocess.run(
-            ["javap", "-c", normalized_path],
-            check=True,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        ).stdout.lower()
-
-        # Count occurrences of important bytecode instructions
-        ldc_count = javap_output.count("ldc")  # String constants
-        putfield_count = javap_output.count("putfield")  # Field assignments
-        getfield_count = javap_output.count("getfield")
-        invokevirtual_count = javap_output.count("invokevirtual")  # Method calls
-        array_usage_count = javap_output.count("newarray") + javap_output.count("arraylength")
-
-        # Define analysis recommendations
-        suggestions = []
-
-        if ldc_count >= 3:
-            suggestions.append("String Constants Analysis (multiple hardcoded strings detected).")
-
-        if putfield_count > 2 or getfield_count > 2:
-            suggestions.append("Field Assignability Analysis (significant field usage).")
-
-        if invokevirtual_count > 5:
-            suggestions.append("Local Points-To Analysis (frequent method calls detected).")
-
-        if array_usage_count > 1:
-            suggestions.append("Field Array Usage Analysis (array manipulations detected).")
-
-        if not suggestions:
-            return json.dumps({"reply": "No obvious recommendations. Consider manual selection."})
-
-        return json.dumps({"reply": "Recommended analyses:\n" + "\n".join(suggestions)})
-
-    except subprocess.CalledProcessError:
-        return json.dumps({"reply": "Error: Could not inspect bytecode."})
 
 #Main function to run the conversation, receiving the user input and returning the LLMs response.
 def run_conversation(user_prompt):

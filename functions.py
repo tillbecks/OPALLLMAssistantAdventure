@@ -60,6 +60,9 @@ all_function_list.append(list_functions_obj)
 #This function conducts a string constants analysis on the java bytecode specified in the file path.
 def string_constants_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
     
     sbt_command = "project Tools; runMain org.opalj.support.info.StringConstants -cp=" + normalized_path
     try:
@@ -96,6 +99,10 @@ all_function_list.append(string_constants_analysis_obj)
 #This function conducts a field assignability analysis on the java bytecode specified in the file path.
 def field_assignability_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
     sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldAssignabilityAnalysisDemo -cp=" + normalized_path 
     try:
         answer = run_sbt_command(sbt_command)
@@ -131,6 +138,10 @@ all_function_list.append(field_assignability_analysis_obj)
 #This function conducts a field immutability analysis on the java bytecode specified in the file path.
 def field_immutability_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+    
     sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldImmutabilityAnalysisDemo -cp=" + normalized_path 
     try:
         answer = run_sbt_command(sbt_command)
@@ -167,6 +178,9 @@ all_function_list.append(field_immutability_analysis_obj)
 def bytecode_disassembler(file_path, safe_path, disassembled_file_name=""):
     normalized_path = os.path.normpath(file_path)
     normalized_safe_path = os.path.normpath(safe_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
     try:
         sbt_command = "project BytecodeDisassembler; run -source " + normalized_path
@@ -228,6 +242,9 @@ def hierarchy_visualisation(file_path, safe_path=""):
     normalized_path = os.path.normpath(file_path)
     normalized_safe_path = os.path.normpath(safe_path)
 
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
     try:
         sbt_command = "project Tools; runMain org.opalj.support.debug.ClassHierarchyVisualizer " + normalized_path
         answer = run_sbt_command(sbt_command)
@@ -282,6 +299,10 @@ all_function_list.append(hierarchy_visualisation_obj)
 #This function conducts a field array usage analysis on the java bytecode specified in the file path.
 def field_array_usage_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
     sbt_command = "project Demos; runMain org.opalj.tac.FieldAndArrayUsageAnalysis -cp=" + normalized_path
     try:
         answer = run_sbt_command(sbt_command)
@@ -315,8 +336,17 @@ field_array_usage_analysis_obj = {
 all_function_list.append(field_array_usage_analysis_obj)
 
 #This function collects points-to information related to a method in a specific class or jar file.
-def local_points_to(file_path, method):
+def local_points_to(file_path, method=""):
+    if method == '':
+        return json.dumps({"reply": f"Method not especified."})
+
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
+
+
     sbt_command = "project Demos; runMain org.opalj.tac.LocalPointsTo "+ normalized_path + " " + method
     try:
         answer = run_sbt_command(sbt_command)
@@ -353,8 +383,15 @@ all_function_list.append(local_points_to_obj)
 
 #This function prints the complete three address code representation of a method in a specific class or jar file.
 #But the LLM tends to only show the three address code related to the specified function, even though the the opal function returns the tac of the whole class.
-def print_tac(file_path, method):
+def print_tac(file_path, method=""):
+    if method == '':
+        return json.dumps({"reply": f"Method not especified."})
+    
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+    
     sbt_command = "project Demos; runMain org.opalj.tac.PrintTAC "+ normalized_path + " " + method
     try:
         answer = run_sbt_command(sbt_command)
@@ -393,6 +430,10 @@ all_function_list.append(print_tac_obj)
 #This function conducts a parameter usage analysis on the java bytecode specified in the file path.
 def parameter_usage_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
     sbt_command = "project Demos; runMain org.opalj.ai.domain.l0.ParameterUsageAnalysis -cp=" + normalized_path 
     try:
         answer = run_sbt_command(sbt_command)
@@ -424,3 +465,74 @@ parameter_usage_analysis_obj = {
     }
 }
 all_function_list.append(parameter_usage_analysis_obj)
+
+def suggest_analysis(file_path):
+    """Suggests a specific OPAL analysis based on bytecode patterns."""
+    normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
+    try:
+        # Run `javap` to disassemble the bytecode
+        javap_output = subprocess.run(
+            ["javap", "-c", normalized_path],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        ).stdout.lower()
+
+        # Count occurrences of important bytecode instructions
+        ldc_count = javap_output.count("ldc")  # String constants
+        putfield_count = javap_output.count("putfield")  # Field assignments
+        getfield_count = javap_output.count("getfield")
+        invokevirtual_count = javap_output.count("invokevirtual")  # Method calls
+        array_usage_count = javap_output.count("newarray") + javap_output.count("arraylength")
+
+        # Define analysis recommendations
+        suggestions = []
+
+        if ldc_count >= 3:
+            suggestions.append("String Constants Analysis (multiple hardcoded strings detected).")
+
+        if putfield_count > 2 or getfield_count > 2:
+            suggestions.append("Field Assignability Analysis (significant field usage).")
+
+        if invokevirtual_count > 5:
+            suggestions.append("Local Points-To Analysis (frequent method calls detected).")
+
+        if array_usage_count > 1:
+            suggestions.append("Field Array Usage Analysis (array manipulations detected).")
+
+        if not suggestions:
+            return json.dumps({"reply": "No obvious recommendations. Consider manual selection."})
+
+        return json.dumps({"reply": "Recommended analyses:\n" + "\n".join(suggestions)})
+
+    except subprocess.CalledProcessError:
+        return json.dumps({"reply": "Error: Could not inspect bytecode."})
+
+suggest_analysis_obj = {
+    "function": suggest_analysis,
+    "definition":{
+        "type": "function",
+        "function": {
+            "name": "suggest_analysis",
+            "description": "Analyzes a .class file to suggest relevant OPAL analysis techniques. This helps users decide which analysis to perform based on the bytecode structure.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Path to the .class file to analyze (e.g. '/usr/home/filename.class')."
+                    }
+                },
+                "required": ["file_path"],
+            },
+        },
+    }
+    
+}
+
+all_function_list.append(suggest_analysis_obj);
