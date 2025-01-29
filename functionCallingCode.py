@@ -9,10 +9,12 @@ from functions import all_function_list
 #user_prompt2 = "Please do a constant string analysis on the file '/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/StringConstantsDemo.class'"
 #user_prompt3 = "Please do a field assignability analysis on the file '/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/FieldAssignabilityDemo.class'"
 
+#SBT_PATH = r"C:\Program Files (x86)\sbt\bin\sbt.bat"  # Comment this out
 
 
 client = Groq(api_key=CROQ_SECRET_API_KEY)
-Model = 'llama3-70b-8192'
+Model = 'llama-3.3-70b-versatile'
+
 
 #Initialisation of the memory component
 mem = Memory()
@@ -21,22 +23,81 @@ mem = Memory()
 #In the following, all available functions are defined. Based on the Information in this list, the LLM makes a decision which function to call.
 tools = map(lambda obj: obj["definition"], all_function_list)
 
+
+
+def suggest_analysis(file_path):
+    """Suggests a specific OPAL analysis based on bytecode patterns."""
+    normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
+    try:
+        # Run `javap` to disassemble the bytecode
+        javap_output = subprocess.run(
+            ["javap", "-c", normalized_path],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        ).stdout.lower()
+
+        # Count occurrences of important bytecode instructions
+        ldc_count = javap_output.count("ldc")  # String constants
+        putfield_count = javap_output.count("putfield")  # Field assignments
+        getfield_count = javap_output.count("getfield")
+        invokevirtual_count = javap_output.count("invokevirtual")  # Method calls
+        array_usage_count = javap_output.count("newarray") + javap_output.count("arraylength")
+
+        # Define analysis recommendations
+        suggestions = []
+
+        if ldc_count >= 3:
+            suggestions.append("String Constants Analysis (multiple hardcoded strings detected).")
+
+        if putfield_count > 2 or getfield_count > 2:
+            suggestions.append("Field Assignability Analysis (significant field usage).")
+
+        if invokevirtual_count > 5:
+            suggestions.append("Local Points-To Analysis (frequent method calls detected).")
+
+        if array_usage_count > 1:
+            suggestions.append("Field Array Usage Analysis (array manipulations detected).")
+
+        if not suggestions:
+            return json.dumps({"reply": "No obvious recommendations. Consider manual selection."})
+
+        return json.dumps({"reply": "Recommended analyses:\n" + "\n".join(suggestions)})
+
+    except subprocess.CalledProcessError:
+        return json.dumps({"reply": "Error: Could not inspect bytecode."})
+
 #Main function to run the conversation, receiving the user input and returning the LLMs response.
 def run_conversation(user_prompt):
-    #This is the message the LLM receives everytime it is called.
-    #In the beginning its role is defined. It receives some information about its assisting role and the tools it can use.
-    #In the end it gets the content of the memory, which are the last n interactions between it and the user.
-    #Afterwards it receives the user input.
-    #This is the part where we can play around with prompt-engineering. To e.g. nudge the LLM into reasoning about whether to combine multiple functions?
     messages = [
         {
             "role": "system",
-            "content": "You are a function calling LLM that uses the static analysis software Opal." + 
-            "Opal combines different tools to analyse java bytecode." +
-            "If the user is asking you something you can't answer, be honest and tell the user that you can't help with that." + 
-            "You will get the console output of the tools you call, which can contain a lot of irrelevant information."  +
-            "You can ignore this information and just return the relevant information to the user." +
-            "You have a memory from the last interactions with the user, please use this as a context. If there is no memory following this, just ignore this information." +
+            "content": "You are a function calling LLM that uses the static analysis software Opal. " + 
+            "Opal combines different tools to analyse java bytecode. " +
+            "Your capabilities include:\n" +
+            "1. String Constants Analysis: Identifies and analyzes string constants in the bytecode\n" +
+            "2. Field Assignability Analysis: Analyzes how fields can be assigned values\n" +
+            "3. Field Array Usage Analysis: Examines how arrays are used within fields\n" +
+            "4. Field Immutability Analysis: Determines if fields are effectively immutable\n" +
+            "5. Parameter Usage Analysis: Analyzes how parameters are used in methods\n" +
+            "6. Local Points-To Analysis: Tracks object references and their relationships\n" +
+            "7. Bytecode Disassembler: Converts bytecode to human-readable format\n" +
+            "8. Hierarchy Visualization: Visualizes class hierarchies from JAR files\n\n" +
+            "Before, and only before, running any analysis:\n" +
+            "1. If no .class file was given, ask for it"
+            "2. Warn the user that the analysis may take several minutes to complete\n\n" +
+            "To help you help the user, in case they don't know what analyses to run, you can also interact with them by:\n" +
+            "- Suggesting an analysis using the heuristic function, and explaining to them how these would help them and why they were suggested\n" +
+            "- Asking about their specific needs or what they want to understand about their code\n" +
+            "If the user is asking you something you can't answer, be honest and tell the user that you can't help with that. " + 
+            "You will get the console output of the tools you call, which can contain a lot of irrelevant information. " +
+            "You can ignore this information and just return the relevant information to the user. " +
+            "You have a memory from the last interactions with the user, please use this as a context. If there is no memory following this, just ignore this information. " +
             mem.get_json_textual()
         },
         {
@@ -61,6 +122,7 @@ def run_conversation(user_prompt):
     if tool_calls:
         available_functions = {
             obj["definition"]["function"]["name"]: obj["function"] for obj in all_function_list
+
         }
         messages.append(response_message)
 
