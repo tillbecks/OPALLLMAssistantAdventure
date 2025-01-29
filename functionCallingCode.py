@@ -4,22 +4,30 @@ import json
 import os
 from secret_keys import CROQ_SECRET_API_KEY
 from memory import Memory
+import os.path
 
 #Prompts examples:
 #user_prompt1 = "Hello, how are you?"
 #user_prompt2 = "Please do a constant string analysis on the file '/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/StringConstantsDemo.class'"
 #user_prompt3 = "Please do a field assignability analysis on the file '/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/FieldAssignabilityDemo.class'"
 
+#SBT_PATH = r"C:\Program Files (x86)\sbt\bin\sbt.bat"  # Comment this out
 
 client = Groq(api_key=CROQ_SECRET_API_KEY)
-Model = 'llama3-70b-8192'
+Model = 'llama-3.3-70b-versatile'
 
-PATH_OPAL = "/home/till/Schreibtisch/Uni/SoftwareDevelopmentTools/opal" #Change this to your opal directory
+PATH_OPAL = "C:\\Users\\anach\\Documents\\Masters\\SDT\\opal" #Change this to your opal directory
 
 #Initialisation of the memory component
 mem = Memory()
 
-#A Function to responde to a casual chat
+if not os.path.exists(PATH_OPAL):
+    raise Exception(f"OPAL directory not found at: {PATH_OPAL}")
+
+if not os.path.exists(os.path.join(PATH_OPAL, "build.sbt")):
+    raise Exception(f"No build.sbt found in OPAL directory: {PATH_OPAL}")
+
+#A Function to respond to a casual chat
 def get_response(question):
     return json.dumps({"question": question})
 
@@ -33,6 +41,10 @@ def list_functions():
 #This creates a gv file of the class hierarchy of a jar file. Currently a safe_path to save the visualisation at can't be created.
 def hierarchy_visualisation(file_path, safe_path=""):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
     normalized_safe_path = os.path.normpath(safe_path)
 
     try:
@@ -65,6 +77,10 @@ def hierarchy_visualisation(file_path, safe_path=""):
 #This function creates a html file, that visualizes the disassembled bytecode of a class file. The file is stored in the safe_path if specified, otherwise in the same directory as the class file.
 def bytecode_disassembler(file_path, safe_path, disassembled_file_name=""):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
     normalized_safe_path = os.path.normpath(safe_path)
 
     try:
@@ -93,22 +109,32 @@ def bytecode_disassembler(file_path, safe_path, disassembled_file_name=""):
 
 #This function conducts a string constants analysis on the java bytecode specified in the file path.
 def string_constants_analysis(file_path):
+    
     normalized_path = os.path.normpath(file_path)
     
-    sbt_command = "project Tools; runMain org.opalj.support.info.StringConstants -cp=" + normalized_path
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+    
+    sbt_command = f'project Tools; runMain org.opalj.support.info.StringConstants -cp={normalized_path}'
+    
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
-        return json.dumps({"reply": "The following error occured: " + str(e)})
-    except FileNotFoundError:
-        return json.dumps({"reply": "FileNotFoundError"})
+        return json.dumps({"reply": f"The following error occurred: {str(e)}"})
+    except FileNotFoundError as e:
+        return json.dumps({"reply": f"FileNotFoundError: Could not find file at path: {normalized_path}"})
     
     return json.dumps({"reply": answer})
 
 #This function conducts a field assignability analysis on the java bytecode specified in the file path.
 def field_assignability_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
-    sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldAssignabilityAnalysisDemo -cp=" + normalized_path 
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
+    sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldAssignabilityAnalysisDemo -cp=" + normalized_path
+
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
@@ -121,6 +147,10 @@ def field_assignability_analysis(file_path):
 #This function conducts a field array usage analysis on the java bytecode specified in the file path.
 def field_array_usage_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
     sbt_command = "project Demos; runMain org.opalj.tac.FieldAndArrayUsageAnalysis -cp=" + normalized_path
     try:
         answer = run_sbt_command(sbt_command)
@@ -131,9 +161,16 @@ def field_array_usage_analysis(file_path):
     return json.dumps({"reply": answer})
 
 #This function collects points-to information related to a method in a specific class or jar file.
-def local_points_to(file_path, method):
+def local_points_to(file_path, method="main"):
+
     normalized_path = os.path.normpath(file_path)
-    sbt_command = "project Demos; runMain org.opalj.tac.LocalPointsTo "+ normalized_path + " " + method
+    
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+    
+    # Format the command with proper quoting
+    sbt_command = f'project Demos; runMain org.opalj.tac.LocalPointsTo -cp={normalized_path} {method}'
+    
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
@@ -144,9 +181,14 @@ def local_points_to(file_path, method):
 
 #This function prints the complete three address code representation of a method in a specific class or jar file.
 #But the LLM tends to only show the three address code related to the specified function, even though the the opal function returns the tac of the whole class.
-def print_tac(file_path, method):
+def print_tac(file_path, method="main"):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
     sbt_command = "project Demos; runMain org.opalj.tac.PrintTAC "+ normalized_path + " " + method
+
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
@@ -158,7 +200,12 @@ def print_tac(file_path, method):
 #This function conducts a field immutability analysis on the java bytecode specified in the file path.
 def field_immutability_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
     sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldImmutabilityAnalysisDemo -cp=" + normalized_path 
+
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
@@ -171,6 +218,10 @@ def field_immutability_analysis(file_path):
 #This function conducts a parameter usage analysis on the java bytecode specified in the file path.
 def parameter_usage_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
     sbt_command = "project Demos; runMain org.opalj.ai.domain.l0.ParameterUsageAnalysis -cp=" + normalized_path 
     try:
         answer = run_sbt_command(sbt_command)
@@ -181,10 +232,33 @@ def parameter_usage_analysis(file_path):
     
     return json.dumps({"reply": answer})
 
+
 #Just a helper funtion to run sbt commands in the opal directory specified by the user. 
-def  run_sbt_command(command):
-    return subprocess.run(["sbt", command], cwd=PATH_OPAL, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
+def run_sbt_command(command):
     
+    # Format the command as a single string
+    full_command = f'sbt "{command}"'
+    
+    try:
+        result = subprocess.run(
+            full_command,
+            cwd=PATH_OPAL,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+        return result.stdout
+    except FileNotFoundError as e:
+        print(f"SBT not found in PATH. Error: {e}")
+        print(f"Current PATH: {os.environ.get('PATH', '')}")
+        raise e
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed with error: {e}")
+        print(f"Error output: {e.stderr}")
+        raise e
+
 #In the following, all available functions are defined. Based on the Information in this list, the LLM makes a decision which function to call.
 tools = [
     {
@@ -382,24 +456,99 @@ tools = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "suggest_analysis",
+            "description": "Analyzes a .class file to suggest relevant OPAL analysis techniques. This helps users decide which analysis to perform based on the bytecode structure.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Path to the .class file to analyze (e.g. '/usr/home/filename.class')."
+                    }
+                },
+                "required": ["file_path"],
+            },
+        },
+    }
 ]
+
+
+def suggest_analysis(file_path):
+    """Suggests a specific OPAL analysis based on bytecode patterns."""
+    normalized_path = os.path.normpath(file_path)
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
+    try:
+        # Run `javap` to disassemble the bytecode
+        javap_output = subprocess.run(
+            ["javap", "-c", normalized_path],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        ).stdout.lower()
+
+        # Count occurrences of important bytecode instructions
+        ldc_count = javap_output.count("ldc")  # String constants
+        putfield_count = javap_output.count("putfield")  # Field assignments
+        getfield_count = javap_output.count("getfield")
+        invokevirtual_count = javap_output.count("invokevirtual")  # Method calls
+        array_usage_count = javap_output.count("newarray") + javap_output.count("arraylength")
+
+        # Define analysis recommendations
+        suggestions = []
+
+        if ldc_count >= 3:
+            suggestions.append("String Constants Analysis (multiple hardcoded strings detected).")
+
+        if putfield_count > 2 or getfield_count > 2:
+            suggestions.append("Field Assignability Analysis (significant field usage).")
+
+        if invokevirtual_count > 5:
+            suggestions.append("Local Points-To Analysis (frequent method calls detected).")
+
+        if array_usage_count > 1:
+            suggestions.append("Field Array Usage Analysis (array manipulations detected).")
+
+        if not suggestions:
+            return json.dumps({"reply": "No obvious recommendations. Consider manual selection."})
+
+        return json.dumps({"reply": "Recommended analyses:\n" + "\n".join(suggestions)})
+
+    except subprocess.CalledProcessError:
+        return json.dumps({"reply": "Error: Could not inspect bytecode."})
 
 #Main function to run the conversation, receiving the user input and returning the LLMs response.
 def run_conversation(user_prompt):
-    #This is the message the LLM receives everytime it is called.
-    #In the beginning its role is defined. It receives some information about its assisting role and the tools it can use.
-    #In the end it gets the content of the memory, which are the last n interactions between it and the user.
-    #Afterwards it receives the user input.
-    #This is the part where we can play around with prompt-engineering. To e.g. nudge the LLM into reasoning about whether to combine multiple functions?
     messages = [
         {
             "role": "system",
-            "content": "You are a function calling LLM that uses the static analysis software Opal." + 
-            "Opal combines different tools to analyse java bytecode." +
-            "If the user is asking you something you can't answer, be honest and tell the user that you can't help with that." + 
-            "You will get the console output of the tools you call, which can contain a lot of irrelevant information."  +
-            "You can ignore this information and just return the relevant information to the user." +
-            "You have a memory from the last interactions with the user, please use this as a context. If there is no memory following this, just ignore this information." +
+            "content": "You are a function calling LLM that uses the static analysis software Opal. " + 
+            "Opal combines different tools to analyse java bytecode. " +
+            "Your capabilities include:\n" +
+            "1. String Constants Analysis: Identifies and analyzes string constants in the bytecode\n" +
+            "2. Field Assignability Analysis: Analyzes how fields can be assigned values\n" +
+            "3. Field Array Usage Analysis: Examines how arrays are used within fields\n" +
+            "4. Field Immutability Analysis: Determines if fields are effectively immutable\n" +
+            "5. Parameter Usage Analysis: Analyzes how parameters are used in methods\n" +
+            "6. Local Points-To Analysis: Tracks object references and their relationships\n" +
+            "7. Bytecode Disassembler: Converts bytecode to human-readable format\n" +
+            "8. Hierarchy Visualization: Visualizes class hierarchies from JAR files\n\n" +
+            "Before, and only before, running any analysis:\n" +
+            "1. If no .class file was given, ask for it"
+            "2. Warn the user that the analysis may take several minutes to complete\n\n" +
+            "To help you help the user, in case they don't know what analyses to run, you can also interact with them by:\n" +
+            "- Suggesting an analysis using the heuristic function, and explaining to them how these would help them\n" +
+            "- Asking about their specific needs or what they want to understand about their code\n" +
+            "If the user is asking you something you can't answer, be honest and tell the user that you can't help with that. " + 
+            "You will get the console output of the tools you call, which can contain a lot of irrelevant information. " +
+            "You can ignore this information and just return the relevant information to the user. " +
+            "You have a memory from the last interactions with the user, please use this as a context. If there is no memory following this, just ignore this information. " +
             mem.get_json_textual()
         },
         {
@@ -434,6 +583,7 @@ def run_conversation(user_prompt):
             "print_tac": print_tac,
             "field_immutability_analysis": field_immutability_analysis,
             "parameter_usage_analysis":parameter_usage_analysis,
+            "suggest_analysis": suggest_analysis,
         }
         messages.append(response_message)
 
