@@ -161,7 +161,10 @@ def field_array_usage_analysis(file_path):
     return json.dumps({"reply": answer})
 
 #This function collects points-to information related to a method in a specific class or jar file.
-def local_points_to(file_path, method="main"):
+def local_points_to(file_path, method=''):
+
+    if method == '':
+        return json.dumps({"reply": f"Method not especified."})
 
     normalized_path = os.path.normpath(file_path)
     
@@ -181,7 +184,11 @@ def local_points_to(file_path, method="main"):
 
 #This function prints the complete three address code representation of a method in a specific class or jar file.
 #But the LLM tends to only show the three address code related to the specified function, even though the the opal function returns the tac of the whole class.
-def print_tac(file_path, method="main"):
+def print_tac(file_path, method=""):
+
+    if method == '':
+        return json.dumps({"reply": f"Method not especified."})
+    
     normalized_path = os.path.normpath(file_path)
 
     if not os.path.exists(normalized_path):
@@ -543,7 +550,7 @@ def run_conversation(user_prompt):
             "1. If no .class file was given, ask for it"
             "2. Warn the user that the analysis may take several minutes to complete\n\n" +
             "To help you help the user, in case they don't know what analyses to run, you can also interact with them by:\n" +
-            "- Suggesting an analysis using the heuristic function, and explaining to them how these would help them\n" +
+            "- Suggesting an analysis using the heuristic function, and explaining to them how these would help them and why they were suggested\n" +
             "- Asking about their specific needs or what they want to understand about their code\n" +
             "If the user is asking you something you can't answer, be honest and tell the user that you can't help with that. " + 
             "You will get the console output of the tools you call, which can contain a lot of irrelevant information. " +
