@@ -7,8 +7,29 @@ all_function_list = []
 
 #Just a helper funtion to run sbt commands in the opal directory specified by the user. 
 def  run_sbt_command(command):
-    return subprocess.run(["sbt", command], cwd=PATH_OPAL, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
+    # Format the command as a single string
+    full_command = f'sbt "{command}"'
     
+    try:
+        result = subprocess.run(
+            full_command,
+            cwd=PATH_OPAL,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+        result = result.stdout.split("[info] [info][project]")[-1]
+        return result.stdout
+    except FileNotFoundError as e:
+        print(f"SBT not found in PATH. Error: {e}")
+        print(f"Current PATH: {os.environ.get('PATH', '')}")
+        raise e
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed with error: {e}")
+        print(f"Error output: {e.stderr}")
+        raise e
 #In the following, all available functions are defined. Based on the Information in this list, the LLM makes a decision which function to call.
 
 #A Function to responde to a casual chat
