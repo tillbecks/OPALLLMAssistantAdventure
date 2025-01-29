@@ -21,7 +21,7 @@ def  run_sbt_command(command):
             shell=True
         )
         result = result.stdout.split("[info] [info][project]")[-1]
-        return result.stdout
+        return result
     except FileNotFoundError as e:
         print(f"SBT not found in PATH. Error: {e}")
         print(f"Current PATH: {os.environ.get('PATH', '')}")

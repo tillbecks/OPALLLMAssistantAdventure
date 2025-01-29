@@ -16,7 +16,6 @@ import os
 client = Groq(api_key=CROQ_SECRET_API_KEY)
 Model = 'llama-3.3-70b-versatile'
 
-
 #Initialisation of the memory component
 mem = Memory()
 
@@ -26,13 +25,8 @@ if not os.path.exists(PATH_OPAL):
 if not os.path.exists(os.path.join(PATH_OPAL, "build.sbt")):
     raise Exception(f"No build.sbt found in OPAL directory: {PATH_OPAL}")
 
-
 #In the following, all available functions are defined. Based on the Information in this list, the LLM makes a decision which function to call.
 tools = map(lambda obj: obj["definition"], all_function_list)
-
-
-
-
 
 #Main function to run the conversation, receiving the user input and returning the LLMs response.
 def run_conversation(user_prompt):
