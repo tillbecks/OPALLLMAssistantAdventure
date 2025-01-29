@@ -26,7 +26,7 @@ if not os.path.exists(os.path.join(PATH_OPAL, "build.sbt")):
     raise Exception(f"No build.sbt found in OPAL directory: {PATH_OPAL}")
 
 #In the following, all available functions are defined. Based on the Information in this list, the LLM makes a decision which function to call.
-tools = map(lambda obj: obj["definition"], all_function_list)
+
 
 #Main function to run the conversation, receiving the user input and returning the LLMs response.
 def run_conversation(user_prompt):
@@ -35,21 +35,10 @@ def run_conversation(user_prompt):
             "role": "system",
             "content": "You are a function calling LLM that uses the static analysis software Opal. " + 
             "Opal combines different tools to analyse java bytecode. " +
-            "Your capabilities include:\n" +
-            "1. String Constants Analysis: Identifies and analyzes string constants in the bytecode\n" +
-            "2. Field Assignability Analysis: Analyzes how fields can be assigned values\n" +
-            "3. Field Array Usage Analysis: Examines how arrays are used within fields\n" +
-            "4. Field Immutability Analysis: Determines if fields are effectively immutable\n" +
-            "5. Parameter Usage Analysis: Analyzes how parameters are used in methods\n" +
-            "6. Local Points-To Analysis: Tracks object references and their relationships\n" +
-            "7. Bytecode Disassembler: Converts bytecode to human-readable format\n" +
-            "8. Hierarchy Visualization: Visualizes class hierarchies from JAR files\n\n" +
             "Before, and only before, running any analysis:\n" +
             "1. If no .class file was given, ask for it"
             "2. Warn the user that the analysis may take several minutes to complete\n\n" +
-            "To help you help the user, in case they don't know what analyses to run, you can also interact with them by:\n" +
-            "- Suggesting an analysis using the heuristic function, and explaining to them how these would help them and why they were suggested\n" +
-            "- Asking about their specific needs or what they want to understand about their code\n" +
+            "You must only use the provided tools to answer. If a tool is required, invoke it exactly as defined."
             "If the user is asking you something you can't answer, be honest and tell the user that you can't help with that. " + 
             "You will get the console output of the tools you call, which can contain a lot of irrelevant information. " +
             "You can ignore this information and just return the relevant information to the user. " +
@@ -62,6 +51,8 @@ def run_conversation(user_prompt):
         }
     ]
 
+    tools = map(lambda obj: obj["definition"], all_function_list)
+
     #The LLM is then called twice, ones to decide whether to call a tool and the second time to create a user-response based on the tools output (or if no tool call was decided based on the user input solely).
     response = client.chat.completions.create(
         model = Model,
@@ -69,6 +60,7 @@ def run_conversation(user_prompt):
         tools=tools,
         tool_choice="auto",
         max_tokens=4096,
+        temperature= 0.2,
     )
 
     response_message = response.choices[0].message
@@ -78,7 +70,6 @@ def run_conversation(user_prompt):
     if tool_calls:
         available_functions = {
             obj["definition"]["function"]["name"]: obj["function"] for obj in all_function_list
-
         }
         messages.append(response_message)
 
