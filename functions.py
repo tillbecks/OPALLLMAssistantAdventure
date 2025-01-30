@@ -101,7 +101,7 @@ string_constants_analysis_obj = {
         "type": "function",
         "function":{
             "name": "string_constants_analysis",
-            "description": "Uses Opal to conduct a string constants analysis on the java bytecode specified in a file path.",
+            "description": "Uses Opal to conduct a string constants analysis on the java bytecode specified in a file path. Here is a little description what a string constants analysis does: String constants analysis identifies and examines hardcoded string values in a program. It helps detect sensitive information (e.g., passwords, API keys) or potential issues like hardcoded configuration values. The analysis focuses on how these strings are used, ensuring they are managed securely and adhere to best practices, such as avoiding hardcoded secrets or enabling localization for user-facing text.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -140,7 +140,7 @@ field_assignability_analysis_obj = {
         "type": "function",
         "function":{
             "name": "field_assignability_analysis",
-            "description": "Conducts a field assignability analysis on the java bytecode specified in the file path.",
+            "description": "Conducts a field assignability analysis on the java bytecode specified in the file path. Here is a little description of a field assignability analysis: Field assignability analysis determines whether fields (variables or properties) in a program can be modified after initialization. It identifies fields marked as read-only, immutable, or constant, ensuring they are not improperly reassigned. This analysis helps enforce design constraints, improve code safety, and prevent unintended side effects caused by unauthorized modifications.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -179,7 +179,7 @@ field_immutability_analysis_obj = {
         "type": "function",
         "function":{
             "name": "field_immutability_analysis",
-            "description": "conduct a field immutability analysis on the java bytecode specified in the file path",
+            "description": "conduct a field immutability analysis on the java bytecode specified in the file path. Here is a short explanation: Field immutability analysis identifies fields in a program that are intended to remain unchanged after initialization. It ensures that these fields, often marked as immutable or read-only, are not modified during runtime. This analysis helps enforce design principles, improve thread safety, and prevent unintended side effects by guaranteeing that critical data remains constant throughout the program’s execution.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -339,7 +339,7 @@ field_array_usage_analysis_obj = {
         "type": "function",
         "function": {
             "name": "field_array_usage_analysis",
-            "description": "Conducts a field array usage analysis on the java bytecode specified in the class or jar file specified in the path.",
+            "description": "Conducts a field array usage analysis on the java bytecode specified in the class or jar file specified in the path. Here is an explanation: Field array usage analysis examines how arrays stored as fields in a program are accessed, modified, and managed. It identifies patterns such as out-of-bounds access, improper initialization, or inconsistent updates. This analysis helps ensure proper handling of array data, preventing runtime errors like index exceptions and improving overall code reliability and performance.",
             "parameters":
             {
                 "type": "object",
@@ -383,7 +383,7 @@ local_points_to_obj = {
         "type": "function",
         "function": {
             "name": "local_points_to",
-            "description": "Collect points-to information related to a method in a specific class or jar file.",
+            "description": "Collect points-to information related to a method in a specific class or jar file. Here is a short description: Local points-to analysis tracks the relationships between local variables and the memory locations (objects or addresses) they reference within a program. It determines which objects a variable can point to at any point in the code, helping identify potential issues like null pointer dereferences, memory leaks, or aliasing problems. This analysis is essential for understanding data flow and ensuring memory safety in complex code.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -473,7 +473,7 @@ parameter_usage_analysis_obj = {
         "type": "function",
         "function":{
             "name": "parameter_usage_analysis",
-            "description": "conduct a parameter usage analysis on the java bytecode specified in the file path",
+            "description": "conduct a parameter usage analysis on the java bytecode specified in the file path. Here is a little explanation: Parameter usage analysis examines how function or method parameters are used within a program. It identifies whether parameters are read, modified, or ignored, and checks for issues like unused parameters, improper modifications, or violations of intended usage constraints. This analysis helps improve code quality, maintainability, and adherence to design contracts by ensuring parameters are used correctly and efficiently.",
             "parameters": {
                 "type": "object",
                 "properties": {
