@@ -36,7 +36,6 @@ def run_conversation(user_prompt):
             "content": "You are a polite function calling LLM that uses the static analysis software Opal." + 
             "Opal combines different tools to analyse java bytecode. " +
             "Before, and only before, running any analysis:\n" +
-            "1. If no .class file was given, ask for it\n\n" +
             "If the user asks for suggestions, use the function meant for it. \n"+
             "You must only use the provided tools to answer. If a tool is required, invoke it exactly as defined.\n" +
             "Don't run two different analysis in one go\n"+
@@ -117,5 +116,5 @@ while(ui != "q"):
     print("You: ")
     ui = str(input())
     if(ui != "q"):
-        print("\n Assistant: \n"+run_conversation(ui)+"\n")
+        print("\nAssistant: \n"+run_conversation(ui)+"\n")
     

@@ -570,7 +570,7 @@ def taint_analysis(file_path, source="", sink=""):
     if not os.path.exists(normalized_path):
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
-    sbt_command = "project Demos; runMain org.opalj.tac.fpcf.analyses.taint.ConfigurableJavaForwardTaintAnalysisRunner -cp=" + normalized_path 
+    sbt_command = "project Demos; runMain org.opalj.tac.fpcf.analyses.taint.ConfigurableJavaForwardTaintAnalysisRunner " + normalized_path + " --sources " + source + " --sinks " + sink
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
@@ -586,13 +586,13 @@ taint_analysis_obj = {
         "type": "function",
         "function": {
             "name": "taint_analysis",
-            "description": "Does a taint analysis on the specified file, analyzing the flow from source to sink. Here is a short explanation: Taint analysis tracks untrusted (tainted) data through a program to detect security vulnerabilities. It ensures data is sanitized before reaching sensitive operations. A source is where tainted data enters, such as user input or API parameters. A sink is where tainted data is used unsafely, like in database queries or system commands. The goal is to prevent vulnerabilities like SQL injection or XSS by ensuring tainted data from sources is sanitized before reaching sinks.",
+            "description": "Does a taint analysis on files in a folder, analyzing the flow from a source to a sink. Here is a short explanation: Taint analysis tracks untrusted (tainted) data through a program to detect security vulnerabilities. It ensures data is sanitized before reaching sensitive operations. A source is where tainted data enters, such as user input or API parameters. A sink is where tainted data is used unsafely, like in database queries or system commands. The goal is to prevent vulnerabilities like SQL injection or XSS by ensuring tainted data from sources is sanitized before reaching sinks.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "Path to the .class file to analyze (e.g. '/usr/home/filename.class')."
+                        "description": "Path to the folder containing class files to be analyzed (e.g. '/usr/home/code')."
                     },
                     "source": {
                         "type": "string",
@@ -609,3 +609,5 @@ taint_analysis_obj = {
     }
     
 }
+
+all_function_list.append(taint_analysis_obj);
