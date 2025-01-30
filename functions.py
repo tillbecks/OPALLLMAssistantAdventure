@@ -395,7 +395,8 @@ local_points_to_obj = {
                         "type": "string",
                         "description": "name of the method in the class file to be analysed (e.g. 'main')"
                     }
-                }
+                },
+                "required": ["file_path", "method"],
             }
         }
     }
@@ -440,7 +441,8 @@ print_tac_obj = {
                         "type": "string",
                         "description": "name of the method in the class file to be analysed (e.g. 'main')"
                     }
-                }
+                },
+                "required": ["file_path", "method"],
             }
         },
     }
@@ -557,3 +559,53 @@ suggest_analysis_obj = {
 }
 
 all_function_list.append(suggest_analysis_obj);
+
+#This function conducts a taint analysis on the java bytecode specified in the file path.
+def taint_analysis(file_path, source="", sink=""):
+    normalized_path = os.path.normpath(file_path);
+
+    if source == "" or sink == "":
+        return json.dumps({"reply": "Error: No source and/or sink was provided."});
+
+    if not os.path.exists(normalized_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+
+    sbt_command = "project Demos; runMain org.opalj.tac.fpcf.analyses.taint.ConfigurableJavaForwardTaintAnalysisRunner -cp=" + normalized_path 
+    try:
+        answer = run_sbt_command(sbt_command)
+    except subprocess.CalledProcessError as e:
+        return json.dumps({"reply": "The following error occured: " + str(e)})
+    except FileNotFoundError:
+        return json.dumps({"reply": "FileNotFoundError"})
+    
+    return json.dumps({"reply": answer})
+
+taint_analysis_obj = {
+    "function": taint_analysis,
+    "definition":{
+        "type": "function",
+        "function": {
+            "name": "taint_analysis",
+            "description": "Does a taint analysis on the specified file, analyzing the flow from source to sink. Here is a short explanation: Taint analysis tracks untrusted (tainted) data through a program to detect security vulnerabilities. It ensures data is sanitized before reaching sensitive operations. A source is where tainted data enters, such as user input or API parameters. A sink is where tainted data is used unsafely, like in database queries or system commands. The goal is to prevent vulnerabilities like SQL injection or XSS by ensuring tainted data from sources is sanitized before reaching sinks.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Path to the .class file to analyze (e.g. '/usr/home/filename.class')."
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "The method of the java programm which the analysis should consider as source (e.g. 'java.lang.String testcode.IndirectStringLeak.getMessage()'). "
+                    },
+                    "sink":{
+                        "type": "string",
+                        "description": "The method of the java programm which the analysis should consider as source (e.g. 'void testcode.IndirectStringLeak.leak(java.lang.String)')."
+                    }
+                },
+                "required": ["file_path", "source", "sink"],
+            },
+        },
+    }
+    
+}
