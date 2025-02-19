@@ -2,7 +2,7 @@ import subprocess
 import json
 import os
 from secret_keys import PATH_OPAL
-from decompilerModule import decompile
+from decompilerModule import decompile_write, decompile_no_write
 
 all_function_list = []
 
@@ -617,8 +617,6 @@ def decompiler(file_path="", safe_location="", methods = None):
     normalized_file_path = os.path.normpath(file_path)
     normalized_safe_location = os.path.normpath(safe_location)
 
-    print("normalized_file_path: " + normalized_file_path)
-
     if file_path=="" or safe_location=="":
         return json.dumps({"reply": "Error: No file path or location to safe the results was provided."});
     if not os.path.exists(normalized_file_path):
@@ -627,9 +625,10 @@ def decompiler(file_path="", safe_location="", methods = None):
         try:
             os.makedirs(normalized_safe_location)
         except OSError as e:
-            return json.dumps({"reply": f"Error: Safe location does not exist and can't be created: {normalized_safe_location}"})
+            return json.dumps({"reply": f"Error: Safe location does not exist and can't be created: {normalized_safe_location}"})          
     
-    answer = decompile(normalized_file_path, normalized_safe_location, methods);
+    
+    answer = decompile_write(normalized_file_path, normalized_safe_location, methods);
     return json.dumps({"reply": answer})
 
 decompiler_obj = {
@@ -663,3 +662,55 @@ decompiler_obj = {
 
 
 all_function_list.append(decompiler_obj);
+
+def decompiler_no_write(file_path="", methods = None):
+    normalized_file_path = os.path.normpath(file_path)
+    answer = ""
+
+    if file_path=="":
+        return json.dumps({"reply": "Error: No file path was provided."});
+    if not os.path.exists(normalized_file_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_file_path}"})
+    
+    if not normalized_file_path.endswith(".jar") and normalized_file_path.endswith(".class"):
+        class_files = []
+        print("The path you provided wasn't a path to a jar file or class files, but the following class files were found")
+        for root, dirs, files in os.walk(normalized_file_path):
+            for file in files:
+                if file.endswith(".class"):
+                    class_files.append(os.path.join(root, file))
+                    print(os.path.join(root, file))
+
+        for class_file in class_files:
+            answer+= decompile_no_write(class_file, None)
+    else:
+        answer = decompile_no_write(normalized_file_path, methods);
+    
+    return json.dumps({"reply": answer})
+
+decompile_and_analyze_or_print_obj = {
+    "function": decompiler_no_write,
+    "definition": {
+        "type": "function",
+        "function": {
+            "name": "decompile_and_analyze_or_print",
+            "description": "Decompiles a java class file or jar file or all class files in a directory and returns the decompiled code. This function can be used, if the user asks you to analyze a code for yourself or if he just wants you to print out the decompiled code.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Path to a class file or jar file to be decompiled (e.g. '/usr/home/filename.class' or '/usr/home/filename.jar'). It can also be a path to a directory containing class files (e.g. /usr/home/ bzw. /usr/home (in this cas just add the / at the end))."
+                    },
+                    "methods":{
+                        "type": "string",
+                        "description": "The user can also specify a method name to only decompile this method (e.g. 'main')."
+                    }
+                },
+                "required": ["file_path"],
+            }
+        }
+    }
+}
+
+all_function_list.append(decompile_and_analyze_or_print_obj);
