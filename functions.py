@@ -2,6 +2,7 @@ import subprocess
 import json
 import os
 from secret_keys import PATH_OPAL
+from decompilerModule import decompile
 
 all_function_list = []
 
@@ -611,3 +612,54 @@ taint_analysis_obj = {
 }
 
 all_function_list.append(taint_analysis_obj);
+
+def decompiler(file_path="", safe_location="", methods = None):
+    normalized_file_path = os.path.normpath(file_path)
+    normalized_safe_location = os.path.normpath(safe_location)
+
+    print("normalized_file_path: " + normalized_file_path)
+
+    if file_path=="" or safe_location=="":
+        return json.dumps({"reply": "Error: No file path or location to safe the results was provided."});
+    if not os.path.exists(normalized_file_path):
+        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_file_path}"})
+    if not os.path.exists(normalized_safe_location):
+        try:
+            os.makedirs(normalized_safe_location)
+        except OSError as e:
+            return json.dumps({"reply": f"Error: Safe location does not exist and can't be created: {normalized_safe_location}"})
+    
+    answer = decompile(normalized_file_path, normalized_safe_location, methods);
+    return json.dumps({"reply": answer})
+
+decompiler_obj = {
+    "function": decompiler,
+    "definition": {
+        "type": "function",
+        "function": {
+            "name": "decompiler",
+            "description": "Decompiles a java class file or jar file, by using a tool called cfr decompiler.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Path to a class file or jar file to be decompiled (e.g. '/usr/home/filename.class' or '/usr/home/filename.jar')."
+                    },
+                    "safe_location": {
+                        "type": "string",
+                        "description": "Path to the directory where the decompiled files should be stored (e.g. '/usr/home/'). If the user forgets the '/' at the end of directory name just add it."
+                    },
+                    "methods":{
+                        "type": "string",
+                        "description": "The user can also specify a method name to only decompile this method (e.g. 'main')."
+                    }
+                },
+                "required": ["file_path", "safe_location"],
+            }
+        }
+    }
+}
+
+
+all_function_list.append(decompiler_obj);
