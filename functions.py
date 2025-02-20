@@ -571,7 +571,7 @@ def taint_analysis(file_path, source="", sink=""):
     if not os.path.exists(normalized_path):
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
-    sbt_command = "project Demos; runMain org.opalj.tac.fpcf.analyses.taint.ConfigurableJavaForwardTaintAnalysisRunner " + normalized_path + " --sources " + source + " --sinks " + sink
+    sbt_command = "project Demos; runMain org.opalj.tac.fpcf.analyses.taint.ConfigurableJavaForwardTaintAnalysisRunner " + normalized_path + " --sources " + f'\\"{source}\\"' + " --sinks " + f'\\"{sink}\\"'
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
@@ -597,7 +597,7 @@ taint_analysis_obj = {
                     },
                     "source": {
                         "type": "string",
-                        "description": "The method of the java programm which the analysis should consider as source (e.g. 'java.lang.String testcode.IndirectStringLeak.getMessage()'). "
+                        "description": "The method of the java programm which the analysis should consider as source (e.g. 'java.lang.String testcode.IndirectStringLeak.getMessage()')."
                     },
                     "sink":{
                         "type": "string",
