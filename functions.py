@@ -2,7 +2,8 @@ import subprocess
 import json
 import os
 from secret_keys import PATH_OPAL
-from decompilerModule import decompile_no_write #, decompile_write
+from decompilerModule import decompile_no_write
+from logger import log
 
 all_function_list = []
 
@@ -10,6 +11,8 @@ all_function_list = []
 def  run_sbt_command(command):
     # Format the command as a single string
     full_command = f'sbt "{command}"'
+
+    log("About to execute the following command: ", full_command)
     
     try:
         result = subprocess.run(
@@ -22,19 +25,25 @@ def  run_sbt_command(command):
             shell=True
         )
         result = result.stdout.split("[info] [info][project]")[-1]
+        log("The execution was succesful and resulted in the following output: ", result)
         return result
     except FileNotFoundError as e:
-        print(f"SBT not found in PATH. Error: {e}")
-        print(f"Current PATH: {os.environ.get('PATH', '')}")
+        error_msg = "";
+        error_msg += f"SBT not found in PATH. Error: {e}\n"
+        error_msg += f"Current PATH: {os.environ.get('PATH', '')}"
+        log("The execution wasn't succesful and resulted in the following error: ", error_msg)
         raise e
     except subprocess.CalledProcessError as e:
-        print(f"Command failed with error: {e}")
-        print(f"Error output: {e.stderr}")
+        error_msg = ""
+        error_msg += f"Command failed with error: {e}"
+        error_msg += f"Error output: {e.stderr}"
+        log("The execution wasn't succesful and resulted in the following error: ", error_msg)
         raise e
 #In the following, all available functions are defined. Based on the Information in this list, the LLM makes a decision which function to call.
 
 #A Function to responde to a casual chat
 def get_response(question):
+    log("Call of function 'get_response' with the following question: ", question)
     return json.dumps({"question": question})
 
 get_response_obj = {
@@ -64,6 +73,7 @@ def list_functions():
     response = ""
     for tool in all_function_list:
         response += tool["definition"]["function"]["name"] + ": " + tool["definition"]["function"]["description"] + "\n"
+    log("Call of function 'list_functions' with the following output: ", response)
     return json.dumps({"reply": "You are able to use the following functions: " + response})
 
 list_functions_obj = {
@@ -82,18 +92,25 @@ all_function_list.append(list_functions_obj)
 #This function conducts a string constants analysis on the java bytecode specified in the file path.
 def string_constants_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+    log("Call of function 'string_constants_analysis' with the following file path (already normalized): ", normalized_path)
 
     if not os.path.exists(normalized_path):
-        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+        error_message = f"Error: File does not exist at path: {normalized_path}"
+        log("The execution wasn't succesful and resulted in the following error: ", error_message)
+        return json.dumps({"reply": error_message})
     
     sbt_command = "project Tools; runMain org.opalj.support.info.StringConstants -cp=" + normalized_path
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
+        log("The execution wasn't succesful and resulted in the following error: ", str(e))
         return json.dumps({"reply": "The following error occured: " + str(e)})
     except FileNotFoundError:
+        log("The execution wasn't succesful and resulted in the following error: FileNotFoundError")
         return json.dumps({"reply": "FileNotFoundError"})
     
+
+    log("The execution was succesful and resulted in the following output: ", answer)
     return json.dumps({"reply": answer})
 
 string_constants_analysis_obj = {
@@ -121,18 +138,24 @@ all_function_list.append(string_constants_analysis_obj)
 #This function conducts a field assignability analysis on the java bytecode specified in the file path.
 def field_assignability_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+    log("Call of function 'field_assignability_analysis' with the following file path (normalized): ", normalized_path)
 
     if not os.path.exists(normalized_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
     sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldAssignabilityAnalysisDemo -cp=" + normalized_path 
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
+        log("The execution wasn't succesful and resulted in the following error: ", str(e))
         return json.dumps({"reply": "The following error occured: " + str(e)})
     except FileNotFoundError:
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": "FileNotFoundError"})
     
+
+    log("The execution wasn succesful and resulted in the following output: ", answer)
     return json.dumps({"reply": answer}) 
 
 field_assignability_analysis_obj = {
@@ -160,18 +183,23 @@ all_function_list.append(field_assignability_analysis_obj)
 #This function conducts a field immutability analysis on the java bytecode specified in the file path.
 def field_immutability_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+    log("Call of function 'field_immutability_analysis' with the following file path (normalized): ", normalized_path)
 
     if not os.path.exists(normalized_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
     
     sbt_command = "project Demos; runMain org.opalj.fpcf.analyses.FieldImmutabilityAnalysisDemo -cp=" + normalized_path 
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
+        log("The execution wasn't succesful and resulted in the following error: ", str(e))
         return json.dumps({"reply": "The following error occured: " + str(e)})
     except FileNotFoundError:
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": "FileNotFoundError"})
     
+    log("The execution was succesful and resulted in the following output: ", answer)
     return json.dumps({"reply": answer})
 
 field_immutability_analysis_obj = {
@@ -201,7 +229,10 @@ def bytecode_disassembler(file_path, safe_path, disassembled_file_name=""):
     normalized_path = os.path.normpath(file_path)
     normalized_safe_path = os.path.normpath(safe_path)
 
+    log("Call of function 'bytecode_disassembler' with the following file path (normalized) and safe path (normalized): ", normalized_path, normalized_safe_path)
+
     if not os.path.exists(normalized_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
     try:
@@ -218,14 +249,17 @@ def bytecode_disassembler(file_path, safe_path, disassembled_file_name=""):
 
         answer = run_sbt_command(sbt_command)
 
-        #return json.dumps({"reply": "The disassembled file has been stored in the path " + os.path.join(safe_path, safe_file + ".html") + "."})
+        log("The execution was succesful and resulted in the following output: ", answer)
         return json.dumps({"reply": answer})
 
     except subprocess.CalledProcessError as e:
+        log("The execution wasn't succesful and resulted in the following error: ", str(e))
         return json.dumps({"reply": "The following error occured: " + str(e)})
     except FileNotFoundError: 
+        log("The execution wasn't succesful and resulted in the following error: FileNotFoundError")
         return json.dumps({"reply": "FileNotFoundError"})
     except PermissionError:
+        log("The execution wasn't succesful and resulted in the following error: PermissionError")
         return json.dumps({"reply": "PermissionError while trying to write the disassembled file to the specified path."})
 
 bytecode_disassembler_obj = {
@@ -260,38 +294,23 @@ bytecode_disassembler_obj = {
 all_function_list.append(bytecode_disassembler_obj)
 
 
-def hierarchy_visualisation(file_path, safe_path=""):
+def hierarchy_visualisation(file_path):
     normalized_path = os.path.normpath(file_path)
-    normalized_safe_path = os.path.normpath(safe_path)
+    log("Call of function 'hierarchy_visualisation' with the following file path (normalized): ", normalized_path)
 
     if not os.path.exists(normalized_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
     try:
         sbt_command = "project Tools; runMain org.opalj.support.debug.ClassHierarchyVisualizer " + normalized_path
         answer = run_sbt_command(sbt_command)
         return_message = ""
-        #This functionality is disabled for now, because getting an file not found error, because the file the content is written first to is open in a file editor, when the sbt command is called, which somehow causes the error.
-        '''if safe_path!="":
-            try:
-                find_answer = answer.find("Wrote class hierarchy graph to:")
-                if find_answer != -1:
-                    jar_name = normalized_path.split("/")[-1].split(".")[0] + ".gv"
-                    normalized_safe_path = os.path.join(normalized_safe_path, jar_name)
-                    #Am ende hinter dem Pfad der nachricht ist noch ein Punkt, der ignoriert werden muss
-                    print(answer)
-                    safe_path_new = os.path.normpath(answer[find_answer+30:].split("\n")[0][:-1])
-                    print(safe_path_new)
-                    content = open(safe_path_new, "r").read().close();
-                    print(normalized_safe_path)
-                    open(normalized_safe_path, "w").write(content).close();
-                    return json.dumps({"reply": "The class hierarchy has been stored in the file " + normalized_safe_path + ". A copy of the file has been safed at: " + safe_path_new})
-            except Exception as e:
-                print(e)
-                return_message += "The following error occured while trying to safe the generated file in the specified safe_path: " + str(e) + " But it was safed in the file specified by the following output:"'''
         return_message += answer
+        log("The execution was succesful and resulted in the following output: ", return_message)
         return json.dumps({"reply": return_message})
     except subprocess.CalledProcessError as e:
+        log("The execution wasn't succesful and resulted in the following error: ", str(e))
         return json.dumps({"reply": "The following error occured: " + str(e)})
     
 
@@ -321,17 +340,23 @@ all_function_list.append(hierarchy_visualisation_obj)
 #This function conducts a field array usage analysis on the java bytecode specified in the file path.
 def field_array_usage_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
+    log("Call of function 'field_array_usage_analysis' with the following file path (normalized): ", normalized_path)
 
     if not os.path.exists(normalized_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
     sbt_command = "project Demos; runMain org.opalj.tac.FieldAndArrayUsageAnalysis -cp=" + normalized_path
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
+        log("The execution wasn't succesful and resulted in the following error: ", str(e))
         return json.dumps({"reply": "The following error occured: " + str(e)})
     except FileNotFoundError:
+        log("The execution wasn't succesful and resulted in the following error: FileNotFoundError")
         return json.dumps({"reply": "FileNotFoundError"})
+    
+    log("The execution was succesful and resulted in the following output: ", answer)
     return json.dumps({"reply": answer})
 
 field_array_usage_analysis_obj = {
@@ -357,25 +382,31 @@ field_array_usage_analysis_obj = {
 }
 all_function_list.append(field_array_usage_analysis_obj)
 
-#This function collects points-to information related to a method in a specific class or jar file.
+#This function collects points-to information rel, safe_path=""ated to a method in a specific class or jar file.
 def local_points_to(file_path, method=""):
-    if method == '':
-        return json.dumps({"reply": f"Method not especified."})
 
     normalized_path = os.path.normpath(file_path)
+    log("Call of function 'local_points_to' with the following file path (normalized) and method: ", normalized_path, method)
+
+    if method == '':
+        log("The execution wasn't succesful and resulted in the following error: Method not especified.")
+        return json.dumps({"reply": f"Method not especified."})
 
     if not os.path.exists(normalized_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
-
-
 
     sbt_command = "project Demos; runMain org.opalj.tac.LocalPointsTo "+ normalized_path + " " + method
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
+        log("The execution wasn't succesful and resulted in the following error: ", str(e))
         return json.dumps({"reply": "The following error occured: " + str(e)})
     except FileNotFoundError:
+        log("The execution wasn't succesful and resulted in the following error: FileNotFoundError")
         return json.dumps({"reply": "FileNotFoundError"})
+    
+    log("The execution was succesful and resulted in the following output: ", answer)
     return json.dumps({"reply": answer})
 
 local_points_to_obj = {
@@ -407,21 +438,29 @@ all_function_list.append(local_points_to_obj)
 #This function prints the complete three address code representation of a method in a specific class or jar file.
 #But the LLM tends to only show the three address code related to the specified function, even though the the opal function returns the tac of the whole class.
 def print_tac(file_path, method=""):
-    if method == '':
-        return json.dumps({"reply": f"Method not especified."})
-    
+
     normalized_path = os.path.normpath(file_path)
+    log("Call of function 'print_tac' with the following file path (normalized) and method: ", normalized_path, method)
+
+    if method == '':
+        log("The execution wasn't succesful and resulted in the following error: Method not especified.")
+        return json.dumps({"reply": f"Method not especified."})
 
     if not os.path.exists(normalized_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
     
     sbt_command = "project Demos; runMain org.opalj.tac.PrintTAC "+ normalized_path + " " + method
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
+        log("The execution wasn't succesful and resulted in the following error: ", str(e))
         return json.dumps({"reply": "The following error occured: " + str(e)})
     except FileNotFoundError:
+        log("The execution wasn't succesful and resulted in the following error: FileNotFoundError")
         return json.dumps({"reply": "FileNotFoundError"})
+    
+    log("The execution was succesful and resulted in the following output: ", answer)
     return json.dumps({"reply": answer})
 
 print_tac_obj = {
@@ -455,17 +494,23 @@ all_function_list.append(print_tac_obj)
 def parameter_usage_analysis(file_path):
     normalized_path = os.path.normpath(file_path)
 
+    log("Call of function 'parameter_usage_analysis' with the following file path (normalized): ", normalized_path)
+
     if not os.path.exists(normalized_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
     sbt_command = "project Demos; runMain org.opalj.ai.domain.l0.ParameterUsageAnalysis -cp=" + normalized_path 
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
+        log("The execution wasn't succesful and resulted in the following error: ", str(e))
         return json.dumps({"reply": "The following error occured: " + str(e)})
     except FileNotFoundError:
+        log("The execution wasn't succesful and resulted in the following error: FileNotFoundError")
         return json.dumps({"reply": "FileNotFoundError"})
     
+    log("The execution was succesful and resulted in the following output: ", answer)
     return json.dumps({"reply": answer})
 
 parameter_usage_analysis_obj = {
@@ -493,8 +538,10 @@ all_function_list.append(parameter_usage_analysis_obj)
 def suggest_analysis(file_path):
     """Suggests a specific OPAL analysis based on bytecode patterns."""
     normalized_path = os.path.normpath(file_path)
+    log("Call of function 'suggest_analysis' with the following file path (normalized): ", normalized_path)
 
     if not os.path.exists(normalized_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
     try:
@@ -532,9 +579,12 @@ def suggest_analysis(file_path):
         if not suggestions:
             return json.dumps({"reply": "No obvious recommendations. Consider manual selection."})
 
+        log("The execution was succesful and resulted in the following output: ", suggestions)
+
         return json.dumps({"reply": "Recommended analyses:\n" + "\n".join(suggestions)})
 
     except subprocess.CalledProcessError:
+        log("The execution wasn't succesful and resulted in the following error: Could not inspect bytecode.")
         return json.dumps({"reply": "Error: Could not inspect bytecode."})
 
 suggest_analysis_obj = {
@@ -565,20 +615,27 @@ all_function_list.append(suggest_analysis_obj);
 def taint_analysis(file_path, source="", sink=""):
     normalized_path = os.path.normpath(file_path);
 
+    log("Call of function 'taint_analysis' with the following file path (normalized) ", file_path, " sources ", source, " sinks ", sink)
+
     if source == "" or sink == "":
+        log("The execution wasn't succesful and resulted in the following error: No source and/or sink was provided.")
         return json.dumps({"reply": "Error: No source and/or sink was provided."});
 
     if not os.path.exists(normalized_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
-    sbt_command = "project Demos; runMain org.opalj.tac.fpcf.analyses.taint.ConfigurableJavaForwardTaintAnalysisRunner " + normalized_path + " --sources " + f'\\"{source}\\"' + " --sinks " + f'\\"{sink}\\"'
+    sbt_command = "project Demos; runMain org.opalj.tac.fpcf.analyses.taint.ConfigurableJavaForwardTaintAnalysisRunner \\\"" + normalized_path + "\\\" --sources " + f'\\"{source}\\"' + " --sinks " + f'\\"{sink}\\"'
     try:
         answer = run_sbt_command(sbt_command)
     except subprocess.CalledProcessError as e:
+        log("The execution wasn't succesful and resulted in the following error: ", str(e))
         return json.dumps({"reply": "The following error occured: " + str(e)})
     except FileNotFoundError:
+        log("The execution wasn't succesful and resulted in the following error: FileNotFoundError")
         return json.dumps({"reply": "FileNotFoundError"})
     
+    log("The execution was succesful and resulted in the following output: ", answer)
     return json.dumps({"reply": answer})
 
 taint_analysis_obj = {
@@ -667,25 +724,35 @@ def decompiler_no_write(file_path="", methods = None):
     normalized_file_path = os.path.normpath(file_path)
     answer = ""
 
+    log("Call of function 'decompiler_no_write' with the following file path (normalized): ", normalized_file_path, " methods ", methods)
+
     if file_path=="":
+        log("The execution wasn't succesful and resulted in the following error: No file path was provided.")
         return json.dumps({"reply": "Error: No file path was provided."});
     if not os.path.exists(normalized_file_path):
+        log("The execution wasn't succesful and resulted in the following error: File does not exist at path: ", normalized_file_path)
         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_file_path}"})
     
     if not normalized_file_path.endswith(".jar") and not normalized_file_path.endswith(".class"):
         class_files = []
-        print("The path you provided wasn't a path to a jar file or class files, but the following class files were found")
+        log("No .jar or .class provided, searching for .class files in the directory: ", normalized_file_path)
         for root, dirs, files in os.walk(normalized_file_path):
             for file in files:
                 if file.endswith(".class"):
                     class_files.append(os.path.join(root, file))
-                    print(os.path.join(root, file))
 
+        if class_files == []:
+            log("No class files found in the directory.")
+            return json.dumps({"reply": "No class files found in the directory."})
+        else:
+            log("Class files found in the directory: ")
         for class_file in class_files:
+            log(class_file)
             answer+= decompile_no_write(class_file, None)
     else:
         answer = decompile_no_write(normalized_file_path, methods);
     
+    log("The execution was succesful and resulted in the following output: ", answer)
     return json.dumps({"reply": answer})
 
 decompile_and_analyze_or_print_obj = {
@@ -713,4 +780,4 @@ decompile_and_analyze_or_print_obj = {
     }
 }
 
-all_function_list.append(decompile_and_analyze_or_print_obj);
+all_function_list.append(decompile_and_analyze_or_print_obj)
