@@ -70,6 +70,7 @@ def run_conversation(user_prompt):
 
     #If a tool call was decided, the chosen functions are being called and the output is being appended to the message.
     if tool_calls:
+        log("The LLM decided to call a function.")
         available_functions = {
             obj["definition"]["function"]["name"]: obj["function"] for obj in all_function_list
         }
@@ -98,6 +99,7 @@ def run_conversation(user_prompt):
         final_response = second_response.choices[0].message.content
     #If no tool call was decided, the LLMs response is being created based on the user input solely.
     else:
+        log("The LLM decided to not call a function.")
         response = client.chat.completions.create(
             model=Model,
             messages=messages,

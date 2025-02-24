@@ -5,7 +5,7 @@ import datetime
 
 LOG_FILENAME = None
 
-def initialize_logger(filename=LOG_PATH):
+def initialize_logger(filename=STD_LOG_PATH):
     """Erstellt oder setzt die Log-Datei zurück."""
     global LOG_FILENAME
     LOG_FILENAME = filename
