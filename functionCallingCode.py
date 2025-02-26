@@ -54,8 +54,6 @@ def run_conversation(user_prompt):
     ]
 
     tools = map(lambda obj: obj["definition"], all_function_list)
-    for m in tools:
-        print(m)
 
     #The LLM is then called twice, ones to decide whether to call a tool and the second time to create a user-response based on the tools output (or if no tool call was decided based on the user input solely).
     response = client.chat.completions.create(
