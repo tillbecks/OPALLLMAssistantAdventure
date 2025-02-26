@@ -1,5 +1,4 @@
-STD_LOG_PATH = "log.txt"
-
+from secret_keys import STD_LOG_PATH
 import os
 import datetime
 
