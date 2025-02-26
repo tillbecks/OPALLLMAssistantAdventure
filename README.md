@@ -1,9 +1,9 @@
 # OPALLLMAssistantAdventure
-This project aims to create a function-calling LLM as an intermediator between users and the static analysis framework OPAL.
+This project aims to create a function-calling LLM as an intermediator between users and the static analysis framework OPAL. In the LLMs own words: 
+> "I am a Java bytecode analysis tool that utilizes the Opal framework to conduct various analyses on Java bytecode." - OpalGPT
+
 
 # Installation
-
-# Setting up a Python Environment for `functionCallingCode.py`
 
 This guide explains how to set up a Python virtual environment, install the required dependencies, and configure the script `functionCallingCode.py`.
 
@@ -25,7 +25,7 @@ source venv/bin/activate
 
 Once activated, your terminal prompt should display the name of the virtual environment, e.g., (venv).
 
-## 2. Install Required Python Packages
+## 2. Install Dependencies
 
 With the virtual environment activated, install the groq package:
 
@@ -38,6 +38,8 @@ Note: If pip is not up to date, you can update it by running:
 ```bash
 python -m pip install --upgrade pip
 ```
+
+Lastly, clone the [OPAL project](https://github.com/opalj/opal/tree/develop) into your machine.
 
 ## 3. Configure functionCallingCode.py and secret_keys.py
 
@@ -67,7 +69,85 @@ python functionCallingCode.py
 
 This will launch the LLM-based interface, allowing you to interact with OPAL through function calls.
 
-## 6. Memory System
+# Overview of Available Functions
+
+The LLM can call the following functions:
+
+- `get_response`: Responds to casual chat messages.
+- `list_functions`: Returns a JSON listing all callable functions and their parameters.
+- `string_constants_analysis`: Analyzes Java bytecode for hardcoded string values.
+- `field_assignability_analysis`: Determines whether fields can be modified after initialization.
+- `field_immutability_analysis`: Checks if fields remain unchanged after initialization.
+- `bytecode_disassembler`: Disassembles Java bytecode and optionally saves the output.
+- `hierarchy_visualisation`: Generates a `.gv` visualization file of a JAR’s hierarchy.
+- `field_array_usage_analysis`: Analyzes how arrays stored as fields are accessed and modified.
+- `local_points_to`: Tracks memory references of local variables in a program.
+- `print_tac`: Prints the three-address code representation of a Java method.
+- `parameter_usage_analysis`: Examines how method parameters are used or modified.
+- `suggest_analysis`: Suggests relevant OPAL analysis techniques for a given `.class` file.
+- `taint_analysis`: Tracks untrusted data flow from sources to sinks to detect vulnerabilities.
+- `decompile_and_analyze_or_print`: Decompiles Java bytecode and prints or analyzes it based on the user's request.
+
+This set of functions enables comprehensive analysis and manipulation of Java bytecode with OPAL and the LLM acting as an intermediary.
+
+# How to use each funtion
+
+For each OPAL analysis, these are the inputs you should give to the LLM:
+
+1. **string_constants_analysis**: a file path to the Java bytecode file (.class file).
+2. **field_assignability_analysis**: a file path to the Java bytecode file (.class file).
+3. **field_immutability_analysis**: a file path to the Java bytecode file (.class file).
+4. **bytecode_disassembler**:
+   - a file path to the Java bytecode file (.class file)
+   - (optional) a safe path to store the disassembled file
+   - (optional) a name for the disassembled file
+5. **hierarchy_visualisation**:
+   - a file path to the jar file
+   - (optional) a safe path to store the .gv file
+6. **field_array_usage_analysis**: a file path to the class or jar file.
+7. **local_points_to**:
+   - a file path to the class or jar file
+   - a method name
+8. **print_tac**:
+   - a file path to the class or jar file
+   - a method name
+9. **parameter_usage_analysis**: a file path to the Java bytecode file.
+10. **suggest_analysis**: a file path to the .class file.
+11. **taint_analysis**:
+    - a source method
+    - a source parameter
+    - a folder containing files
+    - a sink method
+12. **decompile_and_analyze_or_print**:
+    - a file path to the class or jar file
+    - (optional) the directory in which the java class files are stored
+
+# Our experiments
+
+## The Language Model
+
+We tried many different LLMs available for free at Groq for our project, namely:
+
+- llama-3.3-70b-versatile
+- llama3-70b-8192 
+- deepseek-r1-distil-llama-70b
+- llama-3.2-90b-vision-preview
+
+Some of them gave unsatisfying answers, hallucinated too much or just didn't seem to reason well enough for our purposes. Another issue we ran into was the token limits of the Groq API. We needed a model that could reason well, but at the same time allow us to send a reasonable amount of tokens per minute. We finally settled down with `llama-3.3-70b-versatile` and set it's temperature (how creative the model is allowed to be) for 0.2, to avoid hallucinations but allow for some creativity.
+
+## Code Analysis 
+
+One of our goals was to have the LLM help the user decide what OPAL analysis to run on the target code. For this purpose we thought of two approaches:
+
+### Disassembler based
+
+The function `suggest_analysis` is a rule-based suggestion tool that uses the `javap` disassembler to analyse the code. The disassembler outputs bytecode instructions (opcodes). We then count the ocurences of key opcodes and if those surpass a certain threshold, suggest a fitting analysis. We don't take the lenght of the document into account, which could be a problem, given long documents will almost certainly surpass all thresholds. There is a lot of room for improvement in this funcion. Because it is a quite simplistic approach, and we didn't dwell too long on it, as the next approach proved itself to be a lot better. 
+
+### Decompiler based
+
+In order for the LLM to be able to analyse our code and suggest OPAL analysis based on that, it's own prior knowldge and our descriptions of the available functions, we used a decompiling function. The decompiler we choose for this is `cfr`. This approach was so good :) blablablabll write more
+
+## Memory System
 
 Since the Groq API does not provide memory for LLMs, we have implemented a memory mechanism that retains conversation history. This is managed using the following class:
 
@@ -99,28 +179,16 @@ class Memory:
             self.memory.pop()
 ```
 
-## 7. Logging System
+## Logging System
 
 A logging mechanism has been added in `logger.py`, which records both user conversations and the functions executed by the LLM, including the parameters used. The log file is defined in the configuration file (`STD_LOG_PATH`) and defaults to `log.txt`. The log file resets upon restarting the program.
 
-# Overview of Available Functions
+## Problems
 
-The LLM can call the following functions:
 
-- `get_response`: Responds to casual chat messages.
-- `list_functions`: Returns a JSON listing all callable functions and their parameters.
-- `string_constants_analysis`: Analyzes Java bytecode for hardcoded string values.
-- `field_assignability_analysis`: Determines whether fields can be modified after initialization.
-- `field_immutability_analysis`: Checks if fields remain unchanged after initialization.
-- `bytecode_disassembler`: Disassembles Java bytecode and optionally saves the output.
-- `hierarchy_visualisation`: Generates a `.gv` visualization file of a JAR’s hierarchy.
-- `field_array_usage_analysis`: Analyzes how arrays stored as fields are accessed and modified.
-- `local_points_to`: Tracks memory references of local variables in a program.
-- `print_tac`: Prints the three-address code representation of a Java method.
-- `parameter_usage_analysis`: Examines how method parameters are used or modified.
-- `suggest_analysis`: Suggests relevant OPAL analysis techniques for a given `.class` file.
-- `taint_analysis`: Tracks untrusted data flow from sources to sinks to detect vulnerabilities.
-- `decompile_and_analyze_or_print`: Decompiles Java bytecode and prints or analyzes it based on the user's request.
 
-This set of functions enables comprehensive analysis and manipulation of Java bytecode with OPAL and the LLM acting as an intermediary.
+
+
+
+
 
