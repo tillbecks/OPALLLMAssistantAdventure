@@ -76,20 +76,22 @@ def run_conversation(user_prompt):
         }
         messages.append(response_message)
 
+        if len(tool_calls) > 1:
+            log("The LLM decided to call more than one function. This is not allowed. We will only call the first function.")
 
-        for tool_call in tool_calls:
-            function_name = tool_call.function.name
-            function_to_call = available_functions[function_name]
-            function_args = json.loads(tool_call.function.arguments)
-            function_response = function_to_call(**function_args)
-            
+        tool_call = tool_calls[0]
+        function_name = tool_call.function.name
+        function_to_call = available_functions[function_name]
+        function_args = json.loads(tool_call.function.arguments)
+        function_response = function_to_call(**function_args)
+        
 
-            messages.append({
-                "tool_call_id": tool_call.id,
-                "role": "tool",
-                "name": function_name,
-                "content": function_response
-            })
+        messages.append({
+            "tool_call_id": tool_call.id,
+            "role": "tool",
+            "name": function_name,
+            "content": function_response
+        })
 
         #The second and final response is being created, which is going to be displayed to the user as the LLMs answer.
         second_response = client.chat.completions.create(
