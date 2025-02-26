@@ -655,11 +655,11 @@ taint_analysis_obj = {
                     },
                     "source": {
                         "type": "string",
-                        "description": "The method of the java programm which the analysis should consider as source (e.g. 'java.lang.String testcode.IndirectStringLeak.getMessage()')."
+                        "description": "The method of the java programm which the analysis should consider as source (e.g. 'java.lang.String testcode.IndirectStringLeak.getMessage()'). The user can also give a list of such methods, they must be seperated by commas (',') with no whitespaces before or after the comma."
                     },
                     "sink":{
                         "type": "string",
-                        "description": "The method of the java programm which the analysis should consider as source (e.g. 'void testcode.IndirectStringLeak.leak(java.lang.String)')."
+                        "description": "The method of the java programm which the analysis should consider as source (e.g. 'void testcode.IndirectStringLeak.leak(java.lang.String)'). The user can also give a list of such methods, they must be seperated by commas (',') with no whitespaces before or after the comma."
                     }
                 },
                 "required": ["file_path", "source", "sink"],
