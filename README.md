@@ -197,6 +197,7 @@ Sometimes we used original code from the [juliet-java-test-suite](https://github
 In these cases, we changed the code so that the function names etc. could not be interpreted as vulnerabilities. When we did this, we added both codes. 
 In each folder you will find a folder called "Conversations" which contains the corresponding conversations we had with the LLM. 
 In addition to the plain text of the conversation, we also included the log file of the conversation, so that you could better understand what the LLM was doing.
+Note that some of the directory names might be different, as we tried to rename them while "talking" to the llm, so the llm couldn't get any information about possible vulnerabilities from the directory name.
 
 
 
