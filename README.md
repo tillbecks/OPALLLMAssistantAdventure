@@ -1,5 +1,5 @@
 # OPALLLMAssistantAdventure
-This project aims to create a function-calling LLM as an intermediator between users and the static analysis framework OPAL. In the LLMs own words: 
+This project aims to create a function-calling LLM as an intermediator between users and the static analysis framework OPAL. We dearly call it "OpalGPT", despite not using GPT models. In the LLMs own words: 
 > "I am a Java bytecode analysis tool that utilizes the Opal framework to conduct various analyses on Java bytecode." - OpalGPT
 
 
@@ -94,31 +94,31 @@ This set of functions enables comprehensive analysis and manipulation of Java by
 
 For each OPAL analysis, these are the inputs you should give to the LLM:
 
-1. **string_constants_analysis**: a file path to the Java bytecode file (.class file).
-2. **field_assignability_analysis**: a file path to the Java bytecode file (.class file).
-3. **field_immutability_analysis**: a file path to the Java bytecode file (.class file).
-4. **bytecode_disassembler**:
+- `string_constants_analysis`: a file path to the Java bytecode file (.class file).
+- `field_assignability_analysis`: a file path to the Java bytecode file (.class file).
+- `field_immutability_analysis`: a file path to the Java bytecode file (.class file).
+- `bytecode_disassembler`:
    - a file path to the Java bytecode file (.class file)
    - (optional) a safe path to store the disassembled file
    - (optional) a name for the disassembled file
-5. **hierarchy_visualisation**:
+- `hierarchy_visualisation`:
    - a file path to the jar file
    - (optional) a safe path to store the .gv file
-6. **field_array_usage_analysis**: a file path to the class or jar file.
-7. **local_points_to**:
+- `field_array_usage_analysis`: a file path to the class or jar file.
+- `local_points_to`:
    - a file path to the class or jar file
    - a method name
-8. **print_tac**:
+- `print_tac`:
    - a file path to the class or jar file
    - a method name
-9. **parameter_usage_analysis**: a file path to the Java bytecode file.
-10. **suggest_analysis**: a file path to the .class file.
-11. **taint_analysis**:
+- `parameter_usage_analysis`: a file path to the Java bytecode file.
+- `suggest_analysis`: a file path to the .class file.
+- `taint_analysis`:
     - a source method
     - a source parameter
     - a folder containing files
     - a sink method
-12. **decompile_and_analyze_or_print**:
+- `decompile_and_analyze_or_print`:
     - a file path to the class or jar file
     - (optional) the directory in which the java class files are stored
 
@@ -184,6 +184,9 @@ class Memory:
 A logging mechanism has been added in `logger.py`, which records both user conversations and the functions executed by the LLM, including the parameters used. The log file is defined in the configuration file (`STD_LOG_PATH`) and defaults to `log.txt`. The log file resets upon restarting the program.
 
 ## Problems
+
+- **Token Limits**: In order to mitigate this issue, we trim the output of OPAL, which could make the results less accurate. Further down the road, we decided to upgrade our Groq subscription. The project also works on the basic tier, although the user could face problems when the API reaches it's limit.
+- ...
 
 
 
