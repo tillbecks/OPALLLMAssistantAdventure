@@ -186,7 +186,7 @@ A logging mechanism has been added in `logger.py`, which records both user conve
 ## Problems
 
 - **Token Limits**: In order to mitigate this issue, we trim the output of OPAL, which could make the results less accurate. Further down the road, we decided to upgrade our Groq subscription. The project also works on the basic tier, although the user could face problems when the API reaches it's limit.
-- ...
+- **LLM Misbehavior**: Sometimes the LLM makes up information (hallucinates) or doesn't follow instructions perfectly. That doesn't happen so often, and if it happens, restarting the chat can be a solution. 
 
 
 
