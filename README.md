@@ -188,6 +188,15 @@ A logging mechanism has been added in `logger.py`, which records both user conve
 - **Token Limits**: In order to mitigate this issue, we trim the output of OPAL, which could make the results less accurate. Further down the road, we decided to upgrade our Groq subscription. The project also works on the basic tier, although the user could face problems when the API reaches it's limit.
 - **LLM Misbehavior**: Sometimes the LLM makes up information (hallucinates) or doesn't follow instructions perfectly. That doesn't happen so often, and if it happens, restarting the chat can be a solution. 
 
+## Conversation Examples
+
+We have added some conversation examples to the project. 
+They can be found in the 'ExampleExecutions' folder. 
+The different folders represent different conversations, on different files. 
+Sometimes we used original code from the [juliet-java-test-suite](https://github.com/UnitTestBot/juliet-java-test-suite). 
+In these cases, we changed the code so that the function names etc. could not be interpreted as vulnerabilities. When we did this, we added both codes. 
+In each folder you will find a folder called "Conversations" which contains the corresponding conversations we had with the LLM. 
+In addition to the plain text of the conversation, we also included the log file of the conversation, so that you could better understand what the LLM was doing.
 
 
 
