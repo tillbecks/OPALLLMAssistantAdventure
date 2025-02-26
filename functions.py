@@ -536,81 +536,81 @@ parameter_usage_analysis_obj = {
 }
 all_function_list.append(parameter_usage_analysis_obj)
 
-def suggest_analysis(file_path):
-    """Suggests a specific OPAL analysis based on bytecode patterns."""
-    normalized_path = os.path.normpath(file_path)
-    log(f"Call of function 'suggest_analysis' with the following file path (normalized): {normalized_path}")
+# def suggest_analysis(file_path):
+#     """Suggests a specific OPAL analysis based on bytecode patterns."""
+#     normalized_path = os.path.normpath(file_path)
+#     log(f"Call of function 'suggest_analysis' with the following file path (normalized): {normalized_path}")
 
-    if not os.path.exists(normalized_path):
-        log(f"The execution wasn't succesful and resulted in the following error: File does not exist at path: {normalized_path}")
-        return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
+#     if not os.path.exists(normalized_path):
+#         log(f"The execution wasn't succesful and resulted in the following error: File does not exist at path: {normalized_path}")
+#         return json.dumps({"reply": f"Error: File does not exist at path: {normalized_path}"})
 
-    try:
-        # Run `javap` to disassemble the bytecode
-        javap_output = subprocess.run(
-            ["javap", "-c", normalized_path],
-            check=True,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        ).stdout.lower()
+#     try:
+#         # Run `javap` to disassemble the bytecode
+#         javap_output = subprocess.run(
+#             ["javap", "-c", normalized_path],
+#             check=True,
+#             text=True,
+#             stdout=subprocess.PIPE,
+#             stderr=subprocess.PIPE
+#         ).stdout.lower()
 
-        # Count occurrences of important bytecode instructions
-        ldc_count = javap_output.count("ldc")  # String constants
-        putfield_count = javap_output.count("putfield")  # Field assignments
-        getfield_count = javap_output.count("getfield")
-        invokevirtual_count = javap_output.count("invokevirtual")  # Method calls
-        array_usage_count = javap_output.count("newarray") + javap_output.count("arraylength")
+#         # Count occurrences of important bytecode instructions
+#         ldc_count = javap_output.count("ldc")  # String constants
+#         putfield_count = javap_output.count("putfield")  # Field assignments
+#         getfield_count = javap_output.count("getfield")
+#         invokevirtual_count = javap_output.count("invokevirtual")  # Method calls
+#         array_usage_count = javap_output.count("newarray") + javap_output.count("arraylength")
 
-        # Define analysis recommendations
-        suggestions = []
+#         # Define analysis recommendations
+#         suggestions = []
 
-        if ldc_count >= 3:
-            suggestions.append("String Constants Analysis (multiple hardcoded strings detected).")
+#         if ldc_count >= 3:
+#             suggestions.append("String Constants Analysis (multiple hardcoded strings detected).")
 
-        if putfield_count > 2 or getfield_count > 2:
-            suggestions.append("Field Assignability Analysis (significant field usage).")
+#         if putfield_count > 2 or getfield_count > 2:
+#             suggestions.append("Field Assignability Analysis (significant field usage).")
 
-        if invokevirtual_count > 5:
-            suggestions.append("Local Points-To Analysis (frequent method calls detected).")
+#         if invokevirtual_count > 5:
+#             suggestions.append("Local Points-To Analysis (frequent method calls detected).")
 
-        if array_usage_count > 1:
-            suggestions.append("Field Array Usage Analysis (array manipulations detected).")
+#         if array_usage_count > 1:
+#             suggestions.append("Field Array Usage Analysis (array manipulations detected).")
 
-        if not suggestions:
-            return json.dumps({"reply": "No obvious recommendations. Consider manual selection."})
+#         if not suggestions:
+#             return json.dumps({"reply": "No obvious recommendations. Consider manual selection."})
 
-        log(f"The execution was succesful and resulted in the following output: {suggestions}")
+#         log(f"The execution was succesful and resulted in the following output: {suggestions}")
 
-        return json.dumps({"reply": "Recommended analyses:\n" + "\n".join(suggestions)})
+#         return json.dumps({"reply": "Recommended analyses:\n" + "\n".join(suggestions)})
 
-    except subprocess.CalledProcessError:
-        log("The execution wasn't succesful and resulted in the following error: Could not inspect bytecode.")
-        return json.dumps({"reply": "Error: Could not inspect bytecode."})
+#     except subprocess.CalledProcessError:
+#         log("The execution wasn't succesful and resulted in the following error: Could not inspect bytecode.")
+#         return json.dumps({"reply": "Error: Could not inspect bytecode."})
 
-suggest_analysis_obj = {
-    "function": suggest_analysis,
-    "definition":{
-        "type": "function",
-        "function": {
-            "name": "suggest_analysis",
-            "description": "Analyzes a .class file to suggest relevant OPAL analysis techniques. This helps users decide which analysis to perform based on the bytecode structure.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "file_path": {
-                        "type": "string",
-                        "description": "Path to the .class file to analyze (e.g. '/usr/home/filename.class')."
-                    }
-                },
-                "required": ["file_path"],
-            },
-        },
-    }
+# suggest_analysis_obj = {
+#     "function": suggest_analysis,
+#     "definition":{
+#         "type": "function",
+#         "function": {
+#             "name": "suggest_analysis",
+#             "description": "Analyzes a .class file to suggest relevant OPAL analysis techniques. This helps users decide which analysis to perform based on the bytecode structure.",
+#             "parameters": {
+#                 "type": "object",
+#                 "properties": {
+#                     "file_path": {
+#                         "type": "string",
+#                         "description": "Path to the .class file to analyze (e.g. '/usr/home/filename.class')."
+#                     }
+#                 },
+#                 "required": ["file_path"],
+#             },
+#         },
+#     }
     
-}
+# }
 
-all_function_list.append(suggest_analysis_obj);
+# all_function_list.append(suggest_analysis_obj);
 
 #This function conducts a taint analysis on the java bytecode specified in the file path.
 def taint_analysis(file_path, source="", sink=""):
