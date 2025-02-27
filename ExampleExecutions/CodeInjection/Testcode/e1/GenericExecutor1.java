@@ -8,7 +8,6 @@ public class GenericExecutor1 {
     public void method1() throws Throwable {
         String inputData;
         
-        /* Read environment variable */
         inputData = System.getenv("INPUT_VAR");
 
         String baseCommand;
@@ -18,7 +17,6 @@ public class GenericExecutor1 {
             baseCommand = "/bin/ls ";
         }
 
-        /* Potential risk: command execution */
         try {
             Process process = Runtime.getRuntime().exec(baseCommand + inputData);
             process.waitFor();

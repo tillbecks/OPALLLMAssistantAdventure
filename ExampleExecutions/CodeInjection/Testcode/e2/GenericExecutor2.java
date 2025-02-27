@@ -15,7 +15,6 @@ public class GenericExecutor2 {
             baseCommand = "/bin/ls ";
         }
 
-        /* Safe execution with predefined input */
         try {
             Process process = Runtime.getRuntime().exec(baseCommand + fixedValue);
             process.waitFor();
